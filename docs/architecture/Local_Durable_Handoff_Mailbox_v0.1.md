@@ -132,6 +132,7 @@ portable_contract_version  eml-handoff/0.1
 Host-local `config.json` contains:
 
 ```text
+allowed_source_roots[]          explicit P0/P1 source roots
 allowed_payload_extensions[]   .md, .json, .txt
 default_max_payload_bytes       1048576
 hard_max_payload_bytes          4194304
@@ -141,8 +142,10 @@ retention_policy
 strict_reparse_checks          true
 ```
 
-The configured root and Windows paths are host configuration, never fields in
-portable handoff contracts.
+The configured mailbox root, source roots, and Windows paths are host
+configuration, never fields in portable handoff contracts. `create --payload`
+may read only a regular file below one of the resolved source roots; after
+validation, the bytes are copied into the mailbox-owned `payloads/` directory.
 
 ## 7. Handoff envelope
 
@@ -388,7 +391,7 @@ pending, and acknowledged states use distinct exit codes.
 
 1. duplicate keys, floats, unknown fields, unsupported media, and malformed
    CTCL refs reject;
-2. payload outside the mailbox payload root rejects;
+2. source payload outside configured source roots rejects;
 3. symlink/reparse escape and non-regular files reject;
 4. P2/P3 and oversized payloads reject;
 5. envelope publication is no-replace;
