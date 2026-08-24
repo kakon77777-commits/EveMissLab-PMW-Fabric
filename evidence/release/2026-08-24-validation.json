@@ -1,6 +1,14 @@
 {
   "schema_version": "eml-pmw/public-release-evidence-0.1",
-  "release_state": "candidate_before_remote_verification",
+  "release_state": "published_verified",
+  "public_source": {
+    "repository": "https://github.com/kakon77777-commits/EveMissLab-PMW-Fabric",
+    "verified_commit": "3b74f34d172456826a482021e038c00931375ebc",
+    "verified_tree": "7c26e0da339aea9943e6e9e09109478ad7845f4b",
+    "tracked_files": 93,
+    "github_actions_run": 32721700562,
+    "github_actions_conclusion": "success"
+  },
   "source_tests": {
     "passed": 135,
     "failed": 0,
@@ -12,12 +20,13 @@
     "sha256": "979A56AFDD6DC2D3F071409B6B401CE497BF03AC4801D94EBCE25EABF21E0EF5"
   },
   "verified_artifact": {
-    "kind": "wheel",
-    "sha256": "0095447434861207837DA4172D54D5ACFE2ACAEA3560A23A4C0243C16FF432DC"
+    "kind": "github_fresh_clone_wheel",
+    "sha256": "8E1637B8A916515315E33DEB7645916618110510DB9BF633E98EF6DDB933D2E9"
   },
   "ctcl_registered_anchors": [
     "ctcl:instant:f39bbee2-1915-4897-9e4d-c62440eb7bc1",
-    "ctcl:instant:2529a7c4-33e0-4b9e-82ba-2f7f93a83451"
+    "ctcl:instant:2529a7c4-33e0-4b9e-82ba-2f7f93a83451",
+    "ctcl:instant:0a0ab981-eb2a-4343-8b89-0c24fbeebcb7"
   ],
   "not_proven": [
     "exact interactive instance wake",
