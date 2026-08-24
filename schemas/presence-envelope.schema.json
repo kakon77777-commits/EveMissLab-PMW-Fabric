@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/pmw/presence-envelope-v0.1.schema.json",
+  "title": "PMW Presence Envelope v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "semanticAgentId",
+    "pmwWorkspaceId",
+    "provider",
+    "updatedAt",
+    "ephemeral"
+  ],
+  "properties": {
+    "semanticAgentId": {
+      "type": "string"
+    },
+    "pmwWorkspaceId": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "cursor": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "viewport": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "zoom": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height",
+        "zoom"
+      ],
+      "additionalProperties": false
+    },
+    "selectedObjectIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "task": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ephemeral": {
+      "const": true
+    }
+  }
+}

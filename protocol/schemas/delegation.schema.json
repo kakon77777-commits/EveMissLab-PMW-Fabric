@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/herdr-bridge/0.1/delegation.schema.json",
+  "title": "EML Herdr Bridge Delegation v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "delegation_id",
+    "thread_id",
+    "correlation_id",
+    "issuer",
+    "assignee",
+    "task_message_id",
+    "state",
+    "semantic_completion_required",
+    "runtime_evidence"
+  ],
+  "properties": {
+    "delegation_id": {
+      "type": "string",
+      "pattern": "^del_[A-Za-z0-9_-]+$"
+    },
+    "thread_id": {
+      "type": "string",
+      "pattern": "^thr_[A-Za-z0-9_-]+$"
+    },
+    "correlation_id": {
+      "type": "string",
+      "pattern": "^corr_[A-Za-z0-9_-]+$"
+    },
+    "issuer": {
+      "type": "string",
+      "pattern": "^agent://evemisslab/[A-Za-z0-9._~/-]+$"
+    },
+    "assignee": {
+      "type": "string",
+      "pattern": "^agent://evemisslab/[A-Za-z0-9._~/-]+$"
+    },
+    "task_message_id": {
+      "type": "string",
+      "pattern": "^msg_[A-Za-z0-9_-]+$"
+    },
+    "state": {
+      "enum": [
+        "proposed",
+        "accepted",
+        "running",
+        "blocked",
+        "completed",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "semantic_completion_required": {
+      "const": true
+    },
+    "completion_message_id": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^msg_[A-Za-z0-9_-]+$"
+        }
+      ]
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "runtime_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "last_agent_status",
+        "runtime_settled"
+      ],
+      "properties": {
+        "last_agent_status": {
+          "enum": [
+            "idle",
+            "working",
+            "blocked",
+            "done",
+            "unknown"
+          ]
+        },
+        "runtime_settled": {
+          "type": "boolean"
+        },
+        "state_change_seq": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

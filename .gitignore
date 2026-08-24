@@ -1,0 +1,48 @@
+# Python and packaging
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Local agent and editor state
+.claude/
+.worktrees/
+.idea/
+.vscode/
+
+# Machine-local runtime and recovery artifacts
+runtime/
+recovery/
+reference/
+upstream/
+*.db
+*.sqlite
+*.sqlite3
+*.pid
+*.pid.json
+*.jsonl
+*.zip
+*.whl
+
+# Internal evidence and historical package outputs
+evidence/*
+!evidence/release/
+!evidence/release/**
+docs/*
+!docs/architecture/
+!docs/architecture/**
+!docs/security/
+!docs/security/**
+!docs/operations/
+!docs/operations/**
+CHECKSUMS.sha256
+validation.json
+tools/
+
+# Test and analysis caches
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

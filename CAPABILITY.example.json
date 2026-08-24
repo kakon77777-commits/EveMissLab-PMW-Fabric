@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "capability_id": "capability://evemisslab/cross-provider-dialogue",
+  "display_name": "EveMissLab Cross-Provider Dialogue Bridge",
+  "classification": "portable_example",
+  "entrypoints": {
+    "pmw_source": "src/eml_pmw",
+    "bridge_source": "src/eml_bridge",
+    "wake_source": "src/eml_wake",
+    "wake_config_example": "examples/wake/config.example.json",
+    "wake_quickstart": "docs/operations/WAKE_QUICKSTART.md"
+  },
+  "supports": [
+    "provider_neutral_workspace_semantics",
+    "journaled_cross_provider_delivery",
+    "target_authority_lock",
+    "structured_reply_acknowledgement",
+    "durable_external_watchdog_fresh_worker",
+    "receiver_side_wake_idempotency",
+    "ctcl_linked_durable_ack"
+  ],
+  "not_proven": [
+    "token_or_hidden_context_exchange",
+    "exact_interactive_instance_wake",
+    "resident_identity_continuity",
+    "automatic_identity_merge",
+    "universal_provider_federation"
+  ],
+  "runtime_observation": {
+    "status": "unmeasured",
+    "reason": "portable examples do not describe machine-local liveness"
+  }
+}

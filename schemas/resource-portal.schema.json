@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/pmw/resource-portal-v0.1.schema.json",
+  "title": "PMW Resource Portal v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "portalId",
+    "pmwWorkspaceId",
+    "provider",
+    "resourceKind",
+    "providerResourceId",
+    "displayMode",
+    "interactionMode"
+  ],
+  "properties": {
+    "portalId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pmwWorkspaceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pmwTaskId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "canvasObjectId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "mrmic",
+        "tandem",
+        "herdr",
+        "ai_board",
+        "github",
+        "ctcl",
+        "external"
+      ]
+    },
+    "resourceKind": {
+      "type": "string",
+      "enum": [
+        "browser_tab",
+        "browser_workspace",
+        "browser_state_node",
+        "terminal_agent",
+        "terminal_pane",
+        "ai_board_thread",
+        "code_diff",
+        "document",
+        "image",
+        "video",
+        "artifact",
+        "external_generic"
+      ]
+    },
+    "providerResourceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "displayMode": {
+      "type": "string",
+      "enum": [
+        "snapshot",
+        "live",
+        "summary",
+        "hidden"
+      ]
+    },
+    "interactionMode": {
+      "type": "string",
+      "enum": [
+        "inspect",
+        "interact",
+        "control",
+        "read_only"
+      ]
+    },
+    "ownerSemanticAgentId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

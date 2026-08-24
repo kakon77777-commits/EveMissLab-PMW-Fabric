@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evemiss-pmw-fabric"
+version = "0.1.0"
+description = "Canvas-first PMW Fabric with Herdr and MRMIC provider adapters"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+  "build>=1.2,<2",
+  "jsonschema>=4.23,<5",
+  "setuptools>=68",
+]
+
+[project.scripts]
+eml-pmw = "eml_pmw.cli:main"
+eml-bridge = "eml_bridge.cli:main"
+eml-wake = "eml_wake.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

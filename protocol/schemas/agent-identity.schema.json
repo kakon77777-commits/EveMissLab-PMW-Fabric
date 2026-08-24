@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/herdr-bridge/0.1/agent-identity.schema.json",
+  "title": "EML Herdr Bridge Agent Identity v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "semantic_agent_id",
+    "display_name",
+    "runtime_binding"
+  ],
+  "properties": {
+    "semantic_agent_id": {
+      "type": "string",
+      "pattern": "^agent://evemisslab/[A-Za-z0-9._~/-]+$"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role": {
+      "type": "string"
+    },
+    "runtime_binding": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/runtimeBinding"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "nativeSessionRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "agent",
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "agent": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "runtimeBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding_id",
+        "runtime_epoch_id",
+        "herdr_session",
+        "agent_target",
+        "agent_kind",
+        "workspace_id",
+        "tab_id",
+        "pane_id",
+        "terminal_id",
+        "launch_epoch",
+        "bound_at",
+        "status",
+        "state_change_seq",
+        "revision"
+      ],
+      "properties": {
+        "binding_id": {
+          "type": "string",
+          "pattern": "^bind_[A-Za-z0-9_-]+$"
+        },
+        "runtime_epoch_id": {
+          "type": "string",
+          "pattern": "^hep_[A-Za-z0-9_-]+$"
+        },
+        "herdr_session": {
+          "type": "string"
+        },
+        "agent_target": {
+          "type": "string"
+        },
+        "agent_kind": {
+          "type": "string"
+        },
+        "workspace_id": {
+          "type": "string"
+        },
+        "tab_id": {
+          "type": "string"
+        },
+        "pane_id": {
+          "type": "string"
+        },
+        "terminal_id": {
+          "type": "string"
+        },
+        "native_session_ref": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/nativeSessionRef"
+            }
+          ]
+        },
+        "launch_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bound_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "enum": [
+            "idle",
+            "working",
+            "blocked",
+            "done",
+            "unknown"
+          ]
+        },
+        "state_change_seq": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "binding_confidence": {
+          "enum": [
+            "native_session",
+            "runtime_identity",
+            "manual",
+            "heuristic"
+          ]
+        }
+      }
+    }
+  }
+}

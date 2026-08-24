@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/herdr-bridge/0.1/runtime-event.schema.json",
+  "title": "EML Herdr Bridge Runtime Event v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "runtime_epoch_id",
+    "source",
+    "source_sequence",
+    "event_type",
+    "observed_at",
+    "recorded_at",
+    "raw_hash",
+    "data"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[A-Za-z0-9_-]+$"
+    },
+    "runtime_epoch_id": {
+      "type": "string",
+      "pattern": "^hep_[A-Za-z0-9_-]+$"
+    },
+    "source": {
+      "const": "herdr"
+    },
+    "source_sequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runtime_binding_id": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^bind_[A-Za-z0-9_-]+$"
+        }
+      ]
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ctcl_ref": {
+      "type": "string"
+    },
+    "raw_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "data": {
+      "type": "object"
+    }
+  }
+}

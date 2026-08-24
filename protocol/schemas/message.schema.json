@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/herdr-bridge/0.1/message.schema.json",
+  "title": "EML Herdr Bridge Message v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol",
+    "version",
+    "message_id",
+    "thread_id",
+    "correlation_id",
+    "kind",
+    "route_intent",
+    "sender",
+    "recipients",
+    "payload",
+    "delivery",
+    "routing",
+    "provenance"
+  ],
+  "properties": {
+    "protocol": {
+      "const": "eml-herdr-bridge"
+    },
+    "version": {
+      "const": "0.1"
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^msg_[A-Za-z0-9_-]+$"
+    },
+    "thread_id": {
+      "type": "string",
+      "pattern": "^thr_[A-Za-z0-9_-]+$"
+    },
+    "correlation_id": {
+      "type": "string",
+      "pattern": "^corr_[A-Za-z0-9_-]+$"
+    },
+    "parent_message_id": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^msg_[A-Za-z0-9_-]+$"
+        }
+      ]
+    },
+    "kind": {
+      "enum": [
+        "request",
+        "reply",
+        "notice",
+        "result",
+        "control",
+        "error"
+      ]
+    },
+    "route_intent": {
+      "enum": [
+        "direct",
+        "reply",
+        "delegate",
+        "broadcast",
+        "notice"
+      ]
+    },
+    "sender": {
+      "$ref": "#/$defs/party"
+    },
+    "recipients": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/party"
+      }
+    },
+    "payload": {
+      "$ref": "#/$defs/payload"
+    },
+    "delivery": {
+      "$ref": "#/$defs/delivery"
+    },
+    "routing": {
+      "$ref": "#/$defs/routing"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "party": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "semantic_agent_id"
+      ],
+      "properties": {
+        "semantic_agent_id": {
+          "type": "string",
+          "pattern": "^agent://evemisslab/[A-Za-z0-9._~/-]+$"
+        }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "content_type",
+        "text",
+        "trust",
+        "reply_marker"
+      ],
+      "properties": {
+        "content_type": {
+          "enum": [
+            "text/plain",
+            "text/markdown"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "trust": {
+          "enum": [
+            "system",
+            "internal",
+            "external",
+            "untrusted"
+          ]
+        },
+        "reply_marker": {
+          "type": "string",
+          "minLength": 12
+        },
+        "artifact_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "projection",
+        "strict_turn",
+        "require_semantic_ack",
+        "wait_until",
+        "timeout_ms"
+      ],
+      "properties": {
+        "projection": {
+          "enum": [
+            "herdr_prompt",
+            "board_only",
+            "board_and_prompt"
+          ]
+        },
+        "strict_turn": {
+          "type": "boolean"
+        },
+        "require_semantic_ack": {
+          "type": "boolean"
+        },
+        "wait_until": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "idle",
+              "done",
+              "blocked",
+              "unknown"
+            ]
+          }
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hop_count",
+        "max_hops",
+        "auto_reply_depth",
+        "max_auto_reply_depth",
+        "route_trace",
+        "idempotency_key",
+        "payload_hash"
+      ],
+      "properties": {
+        "hop_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_hops": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "auto_reply_depth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_auto_reply_depth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "route_trace": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 8
+        },
+        "payload_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "created_at",
+        "observed_at",
+        "origin"
+      ],
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "origin": {
+          "enum": [
+            "human",
+            "agent",
+            "bridge",
+            "system"
+          ]
+        },
+        "ctcl_ref": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

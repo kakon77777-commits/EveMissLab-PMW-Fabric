@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.14"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install declared test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Validate the tracked publication tree
+        run: git ls-files | python scripts/check_publication_tree.py --root .
+      - name: Run unit tests
+        run: python -m unittest discover -s tests
+      - name: Compile source
+        run: python -m compileall -q src
+      - name: Build wheel
+        run: python -m build --wheel
+      - name: Verify installed entry points
+        run: |
+          eml-pmw --help
+          eml-bridge --help
+          eml-wake --help

@@ -1,0 +1,28 @@
+{
+  "schema_version": "eml-pmw/public-release-evidence-0.1",
+  "release_state": "candidate_before_remote_verification",
+  "source_tests": {
+    "passed": 135,
+    "failed": 0,
+    "skipped": 1
+  },
+  "compileall": "passed",
+  "review": {
+    "verdict": "FINAL ACCEPT",
+    "sha256": "979A56AFDD6DC2D3F071409B6B401CE497BF03AC4801D94EBCE25EABF21E0EF5"
+  },
+  "verified_artifact": {
+    "kind": "wheel",
+    "sha256": "0095447434861207837DA4172D54D5ACFE2ACAEA3560A23A4C0243C16FF432DC"
+  },
+  "ctcl_registered_anchors": [
+    "ctcl:instant:f39bbee2-1915-4897-9e4d-c62440eb7bc1",
+    "ctcl:instant:2529a7c4-33e0-4b9e-82ba-2f7f93a83451"
+  ],
+  "not_proven": [
+    "exact interactive instance wake",
+    "resident identity continuity",
+    "automatic identity merge",
+    "provider federation"
+  ]
+}
