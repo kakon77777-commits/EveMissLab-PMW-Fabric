@@ -88,7 +88,7 @@ shared-world system is separated into six planes.
 | Federation and Coordination | PMW workspaces, tasks, participant/resource bindings, handoff, authority evaluation, decision receipts | Provider-native state, existence ownership |
 | Residence and Attestation | ARCP Residence/lineage plus RAL registration, instance/address claims, observations, corrections | Transport, wake, automatic identity merge |
 | Evidence and Causality | ARCP events, SEDB ledgers, CTCL temporal evidence, causal parents, integrity and provenance | Automatic permission or personality judgment |
-| Transport and Activation | Bridge delivery stages, Wake fresh-worker activation, acknowledgements, idempotency | Authorship proof, resident continuity, semantic agreement |
+| Transport and Activation | Local Durable Handoff Mailbox, Bridge delivery stages, Wake fresh-worker activation, acknowledgements, idempotency | Authorship proof, resident continuity, semantic agreement |
 | Provider Resources | Codex, Claude, Tandem, GitHub, browsers, files, terminals, cloud services, robots and devices | Global workspace or entity identity |
 
 Each plane is independently testable and replaceable behind versioned
@@ -375,6 +375,13 @@ conflict resolver.
 
 ## 13. Delivery, idempotency, and unknown effects
 
+Cross-dialogue uses an outbox-first local fallback. A durable handoff and payload
+digest are committed before Bridge, queue, Monitor, Wake, or another fast-path
+notification is attempted. Fast transports carry the same `handoff_id`; they do
+not become the canonical message body or completion authority. The standalone
+contract is defined in
+[Local Durable Handoff Mailbox v0.1](Local_Durable_Handoff_Mailbox_v0.1.md).
+
 The following identifiers remain separate:
 
 ```text
@@ -439,6 +446,9 @@ This umbrella architecture is too large for one implementation plan. Work is
 decomposed into independently reviewable subprojects, each with its own design,
 plan, tests, and acceptance gate.
 
+0. **Local Durable Handoff Mailbox v0.1** — outbox-first P0/P1 document
+   handoff, immutable envelope/payload digests, claim/materialization/receipt,
+   duplicate delivery handling, and local no-network acceptance.
 1. **ARCP-PMW-MRMIC Integration Profile v1** — typed references, contract
    reuse, capability negotiation, adapter mapping, and negative fixtures. This
    is the first subproject.
@@ -457,9 +467,10 @@ plan, tests, and acceptance gate.
 7. **Employment and Economic Relations Profile** — explicitly deferred and not
    implied by any earlier subproject.
 
-The first implementation plan must cover only subproject 1. It must not silently
-expand into ARCP identity issuance, general federation consensus, a new MRMIC
-renderer, or HDUS implementation.
+The first implementation plan covers only subproject 0. After it passes
+independent verification, execution returns to the already-written subproject 1
+plan. Neither plan may silently expand into ARCP identity issuance, general
+federation consensus, a new MRMIC renderer, or HDUS implementation.
 
 ## 17. Acceptance matrix
 
@@ -543,7 +554,8 @@ or this design's implementation.
 
 ## 20. Review gate
 
-This document is the umbrella architecture. Written-spec approval authorizes
-creation of a detailed implementation plan for **ARCP-PMW-MRMIC Integration
-Profile v1 only**. Every later subproject returns through a separate design and
+This document is the umbrella architecture. The next implementation plan is for
+**Local Durable Handoff Mailbox v0.1 only**. After that slice passes, work
+returns to **ARCP-PMW-MRMIC Integration Profile v1** through its existing Inline
+Execution plan. Every later subproject returns through a separate design and
 authorization gate.
