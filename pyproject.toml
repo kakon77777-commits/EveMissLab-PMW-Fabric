@@ -22,6 +22,7 @@ test = [
 eml-pmw = "eml_pmw.cli:main"
 eml-bridge = "eml_bridge.cli:main"
 eml-wake = "eml_wake.cli:main"
+eml-handoff = "eml_handoff.cli:entrypoint"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

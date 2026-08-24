@@ -28,7 +28,7 @@ def valid_config() -> dict:
         "allowed_authority_refs": ["principal:neo.k/cross-dialogue"],
         "default_max_payload_bytes": 1_048_576,
         "hard_max_payload_bytes": 4_194_304,
-        "ctcl_endpoint": "https://commoninstant.org",
+        "ctcl_endpoint": "https://commoninstant.org/v1/instants",
         "strict_reparse_checks": True,
     }
 
