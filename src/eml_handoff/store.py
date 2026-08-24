@@ -128,6 +128,13 @@ class HandoffStore:
     def failure_path(self, handoff_id: str) -> Path:
         return self.failures_dir / f"{handoff_key(handoff_id)}.json"
 
+    def notification_path(self, handoff_id: str, notification_id: str) -> Path:
+        return (
+            self.notifications_dir
+            / handoff_key(handoff_id)
+            / f"{handoff_key(notification_id)}.json"
+        )
+
     def get_envelope(self, handoff_id: str) -> HandoffEnvelope:
         path = self.envelope_path(handoff_id)
         if not path.is_file():
@@ -370,6 +377,68 @@ class HandoffStore:
             }
         )
         _publish_json(self.receipt_path(handoff_id), record.to_dict())
+        return record
+
+    def record_notification(
+        self,
+        handoff_id: str,
+        *,
+        notification_id: str,
+        route_kind: str,
+        status: str,
+        error_code: str | None,
+        ephemeral_route_ref: str | None,
+    ) -> dict[str, Any]:
+        envelope = self.get_envelope(handoff_id)
+        if not notification_id or not route_kind:
+            raise HandoffError("notification_field_missing", "id and route are required")
+        if status not in {"attempted", "accepted", "failed", "uncertain"}:
+            raise HandoffError("notification_status_invalid", status)
+        if error_code is not None and not error_code:
+            raise HandoffError("notification_error_invalid", "error_code")
+        if ephemeral_route_ref is not None and not ephemeral_route_ref:
+            raise HandoffError("notification_route_invalid", "ephemeral_route_ref")
+        path = self.notification_path(handoff_id, notification_id)
+        if path.exists():
+            existing = _read_json(path)
+            comparable = {
+                key: existing.get(key)
+                for key in (
+                    "handoff_id",
+                    "notification_id",
+                    "route_kind",
+                    "status",
+                    "error_code",
+                    "ephemeral_route_ref",
+                    "envelope_core_digest",
+                )
+            }
+            proposed = {
+                "handoff_id": handoff_id,
+                "notification_id": notification_id,
+                "route_kind": route_kind,
+                "status": status,
+                "error_code": error_code,
+                "ephemeral_route_ref": ephemeral_route_ref,
+                "envelope_core_digest": envelope.core_digest,
+            }
+            if comparable != proposed:
+                raise HandoffError(
+                    "notification_content_collision", notification_id
+                )
+            return existing
+        record = {
+            "schema_version": "eml-handoff/notification-0.1",
+            "handoff_id": handoff_id,
+            "notification_id": notification_id,
+            "route_kind": route_kind,
+            "status": status,
+            "error_code": error_code,
+            "ephemeral_route_ref": ephemeral_route_ref,
+            "envelope_core_digest": envelope.core_digest,
+            "observed_at": _now_iso(),
+        }
+        _publish_json(path, record)
         return record
 
     def pending(self, target_kind: str, target_ref: str) -> list[str]:
