@@ -287,11 +287,11 @@ def validate_materialization_dict(value: dict[str, Any]) -> dict[str, Any]:
         "handoff_id",
         "envelope_core_digest",
         "payload_sha256",
-        "receiver_instance_ref",
         "materialized_at",
         "materialization_method",
     ):
         _text(out[field], field)
+    _text(out["receiver_instance_ref"], "receiver_instance_ref", nullable=True)
     if not DIGEST.fullmatch(out["envelope_core_digest"]):
         raise HandoffError("digest_invalid", "envelope_core_digest")
     if not HEX64.fullmatch(out["payload_sha256"]):
@@ -310,10 +310,10 @@ def validate_receipt_dict(value: dict[str, Any]) -> dict[str, Any]:
         "handoff_id",
         "envelope_core_digest",
         "payload_sha256",
-        "receiver_instance_ref",
         "local_recorded_at",
     ):
         _text(out[field], field)
+    _text(out["receiver_instance_ref"], "receiver_instance_ref", nullable=True)
     if not DIGEST.fullmatch(out["envelope_core_digest"]):
         raise HandoffError("digest_invalid", "envelope_core_digest")
     if not HEX64.fullmatch(out["payload_sha256"]):

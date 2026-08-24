@@ -118,7 +118,7 @@ class MaterializationRecord:
     handoff_id: str
     envelope_core_digest: str
     payload_sha256: str
-    receiver_instance_ref: str
+    receiver_instance_ref: str | None
     materialized_at: str
     materialization_method: str
 
@@ -138,7 +138,7 @@ class ReceiptRecord:
     handoff_id: str
     envelope_core_digest: str
     payload_sha256: str
-    receiver_instance_ref: str
+    receiver_instance_ref: str | None
     decision: str
     response_handoff_id: str | None
     evidence_refs: tuple[str, ...]
