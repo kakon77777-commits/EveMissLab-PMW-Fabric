@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -31,6 +32,7 @@ class WakePowerShellTests(unittest.TestCase):
         self.config = self.base / "config.json"
         raw = valid_config()
         raw["allowed_payload_roots"] = [str(self.base)]
+        raw["claude_binary"] = sys.executable
         self.config.write_text(json.dumps(raw), encoding="utf-8")
         self.pid = self.base / "watchdog.pid.json"
 
@@ -89,6 +91,8 @@ class WakePowerShellTests(unittest.TestCase):
         self.assertFalse(self.pid.exists())
 
     def test_start_and_stop_lifecycle_survives_paths_with_spaces(self):
+        if os.name != "nt":
+            self.skipTest("the hidden-window watchdog launcher is Windows-specific")
         start = ROOT / "scripts" / "Start-EmlWakeWatchdog.ps1"
         stop = ROOT / "scripts" / "Stop-EmlWakeWatchdog.ps1"
         common = [
@@ -181,6 +185,8 @@ class WakePowerShellTests(unittest.TestCase):
         self.assertFalse(value["provider_invoked"])
 
     def test_live_probe_validate_only_accepts_default_bare_claude(self):
+        if shutil.which("claude") is None:
+            self.skipTest("default Claude command is not installed in this environment")
         script = ROOT / "scripts" / "Test-EmlWakeLive.ps1"
         proc = subprocess.run(
             [

@@ -105,7 +105,7 @@ class DeliveredFrameTests(unittest.TestCase):
                     new_message(sender=SENDER, recipient=RECIPIENT, text="hi", target_lock=lock)
                 )
                 self.assertEqual(len(sent), 1)
-                self.assertIn(str(db), sent[0])
+                self.assertIn(str(db.resolve()), sent[0])
             finally:
                 journal.close()
 
