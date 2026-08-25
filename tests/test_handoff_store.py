@@ -194,7 +194,9 @@ class HandoffStoreTests(unittest.TestCase):
                 read_source_payload(linked_payload, config)
             self.assertEqual(caught.exception.code, "payload_reparse_refused")
         finally:
-            if linked_root.exists():
+            if linked_root.is_symlink():
+                linked_root.unlink()
+            elif linked_root.exists():
                 os.rmdir(linked_root)
 
     def test_real_in_root_symlink_is_rejected_before_resolution(self):
