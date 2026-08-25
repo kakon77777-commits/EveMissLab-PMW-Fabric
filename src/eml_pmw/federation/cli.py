@@ -61,6 +61,16 @@ def _store(args) -> FederationStore:
     return FederationStore(args.root, _config(args.config))
 
 
+def _find_lexical_root(requested, resolved_root, *, samefile=os.path.samefile):
+    for candidate in (requested, *requested.parents):
+        try:
+            if samefile(candidate, resolved_root):
+                return candidate
+        except OSError:
+            continue
+    return None
+
+
 def _read_source_payload(path: str | Path, config: FederationConfig) -> bytes:
     requested = Path(os.path.abspath(path))
     try:
@@ -72,11 +82,17 @@ def _read_source_payload(path: str | Path, config: FederationConfig) -> bytes:
     for raw_root in config.allowed_source_roots:
         root_unresolved = Path(os.path.abspath(raw_root))
         try:
-            requested.relative_to(root_unresolved)
-            if config.strict_reparse_checks:
-                _verify_no_reparse(root_unresolved, requested)
             root = root_unresolved.resolve(strict=True)
             target.relative_to(root)
+            if config.strict_reparse_checks:
+                lexical_root = _find_lexical_root(requested, root)
+                if lexical_root is None:
+                    raise FederationError(
+                        "payload_reparse_refused",
+                        "raw payload path cannot be anchored to the allowlisted root",
+                    )
+                _verify_no_reparse(Path(lexical_root), requested)
+                _verify_no_reparse(root, target)
         except WakeError as error:
             raise FederationError(error.code, error.message) from error
         except (OSError, ValueError) as error:
