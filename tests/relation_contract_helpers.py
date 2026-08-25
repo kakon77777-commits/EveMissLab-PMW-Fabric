@@ -212,6 +212,77 @@ def valid_contract_version(**overrides):
     return mutate_and_rebind(value, overrides)
 
 
+def valid_grant_authority_evidence(**overrides):
+    value = {
+        "schema": "arcp/grant-authority-evidence/0.1",
+        "grant_authority_evidence_id": "grant-authority-evidence:fixture:a",
+        "grantor_party_ref": "resident:fixture:a",
+        "authority_source_ref": "authority-root:fixture:a",
+        "resolver_profile_id": "authority-resolver:fixture:v1",
+        "permitted_lifecycle_actions": ["contract.proposed", "contract.party_accepted"],
+        "permitted_contract_scope": ["contract:fixture:collaboration"],
+        "valid_from": normalized_instant("900", 0),
+        "expires_at": normalized_instant("3000", 0),
+        "dependency_refs": [],
+        "content_digest": "",
+    }
+    return mutate_and_rebind(value, overrides)
+
+
+def valid_representation_grant(**overrides):
+    value = {
+        "schema": "arcp/representation-grant/0.1",
+        "representation_grant_id": "representation-grant:fixture:a:1",
+        "principal_party_ref": "resident:fixture:a",
+        "representative_ref": "instance:fixture:a:1",
+        "representative_kind": "instance",
+        "allowed_lifecycle_actions": ["contract.proposed", "contract.party_accepted"],
+        "contract_scope": ["contract:fixture:collaboration"],
+        "relation_scope": ["relation:fixture:collaboration"],
+        "valid_from": normalized_instant("1000", 0),
+        "expires_at": normalized_instant("2500", 0),
+        "issued_at": normalized_instant("950", 0),
+        "revocable": True,
+        "redelegable": False,
+        "grant_authority_ref": "grant-authority-evidence:fixture:a",
+        "acceptance_evidence_refs": ["evidence:representation:accepted:a"],
+        "party_evidence_pin_refs": ["party-evidence-pin:fixture:a:1"],
+        "content_digest": "",
+    }
+    return mutate_and_rebind(value, overrides)
+
+
+def valid_party_acceptance(**overrides):
+    target_kind = overrides.get("target_kind", "contract")
+    target_id = (
+        "relation:fixture:collaboration"
+        if target_kind == "relation"
+        else "contract:fixture:collaboration"
+    )
+    target_digest = (
+        valid_relation_version()["content_digest"]
+        if target_kind == "relation"
+        else valid_contract_version()["content_digest"]
+    )
+    value = {
+        "schema": "arcp/party-acceptance/0.1",
+        "acceptance_id": f"acceptance:fixture:a:{target_kind}:v1",
+        "party_ref": "resident:fixture:a",
+        "target_kind": target_kind,
+        "target_id": target_id,
+        "target_version": 1,
+        "target_digest": target_digest,
+        "representation_grant_ref": "representation-grant:fixture:a:1",
+        "representation_grant_digest": valid_representation_grant()["content_digest"],
+        "party_evidence_pin_refs": ["party-evidence-pin:fixture:a:1"],
+        "acceptance_evidence_refs": ["evidence:acceptance:a:1"],
+        "acceptance_evidence_root_refs": ["evidence-root:acceptance:a"],
+        "accepted_at": normalized_instant("1100", 0),
+        "content_digest": "",
+    }
+    return mutate_and_rebind(value, overrides)
+
+
 @contextmanager
 def assert_relation_error(testcase, code):
     from eml_pmw.relations.errors import RelationContractError

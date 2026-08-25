@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/representation-grant-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "representation_grant_id", "principal_party_ref", "representative_ref", "representative_kind", "allowed_lifecycle_actions", "contract_scope", "relation_scope", "valid_from", "expires_at", "issued_at", "revocable", "redelegable", "grant_authority_ref", "acceptance_evidence_refs", "party_evidence_pin_refs", "content_digest"],
+  "properties": {
+    "schema": {"const": "arcp/representation-grant/0.1"},
+    "representation_grant_id": {"type": "string", "minLength": 1},
+    "principal_party_ref": {"type": "string", "minLength": 1},
+    "representative_ref": {"type": "string", "minLength": 1},
+    "representative_kind": {"enum": ["entity", "instance"]},
+    "allowed_lifecycle_actions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "contract_scope": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "relation_scope": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "valid_from": {"$ref": "#/$defs/instant"},
+    "expires_at": {"$ref": "#/$defs/instant"},
+    "issued_at": {"$ref": "#/$defs/instant"},
+    "revocable": {"const": true},
+    "redelegable": {"const": false},
+    "grant_authority_ref": {"type": "string", "minLength": 1},
+    "acceptance_evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "party_evidence_pin_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "content_digest": {"$ref": "#/$defs/digest"}
+  },
+  "anyOf": [
+    {"properties": {"contract_scope": {"minItems": 1}}},
+    {"properties": {"relation_scope": {"minItems": 1}}}
+  ],
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"},
+    "instant": {
+      "type": "object", "additionalProperties": false,
+      "required": ["instant_ref", "clock_profile_id", "normalized_unix_ns", "uncertainty_ns", "verification_status", "source_evidence_refs"],
+      "properties": {
+        "instant_ref": {"type": "string", "minLength": 1}, "clock_profile_id": {"type": "string", "minLength": 1},
+        "normalized_unix_ns": {"type": "string", "pattern": "^(?:0|-?[1-9][0-9]*)$"}, "uncertainty_ns": {"type": "integer", "minimum": 0},
+        "verification_status": {"enum": ["verified", "observed", "unmeasured", "rejected"]},
+        "source_evidence_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}

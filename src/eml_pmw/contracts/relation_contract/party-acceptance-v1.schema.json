@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/party-acceptance-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "acceptance_id", "party_ref", "target_kind", "target_id", "target_version", "target_digest", "representation_grant_ref", "representation_grant_digest", "party_evidence_pin_refs", "acceptance_evidence_refs", "acceptance_evidence_root_refs", "accepted_at", "content_digest"],
+  "properties": {
+    "schema": {"const": "arcp/party-acceptance/0.1"},
+    "acceptance_id": {"type": "string", "minLength": 1},
+    "party_ref": {"type": "string", "minLength": 1},
+    "target_kind": {"enum": ["relation", "contract"]},
+    "target_id": {"type": "string", "minLength": 1},
+    "target_version": {"type": "integer", "minimum": 1},
+    "target_digest": {"$ref": "#/$defs/digest"},
+    "representation_grant_ref": {"type": "string", "minLength": 1},
+    "representation_grant_digest": {"$ref": "#/$defs/digest"},
+    "party_evidence_pin_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "acceptance_evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "acceptance_evidence_root_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "accepted_at": {"$ref": "#/$defs/instant"},
+    "content_digest": {"$ref": "#/$defs/digest"}
+  },
+  "allOf": [
+    {"if": {"properties": {"target_kind": {"const": "relation"}}}, "then": {"properties": {"target_id": {"pattern": "^relation:"}}}},
+    {"if": {"properties": {"target_kind": {"const": "contract"}}}, "then": {"properties": {"target_id": {"pattern": "^contract:"}}}}
+  ],
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"},
+    "instant": {
+      "type": "object", "additionalProperties": false,
+      "required": ["instant_ref", "clock_profile_id", "normalized_unix_ns", "uncertainty_ns", "verification_status", "source_evidence_refs"],
+      "properties": {
+        "instant_ref": {"type": "string", "minLength": 1}, "clock_profile_id": {"type": "string", "minLength": 1},
+        "normalized_unix_ns": {"type": "string", "pattern": "^(?:0|-?[1-9][0-9]*)$"}, "uncertainty_ns": {"type": "integer", "minimum": 0},
+        "verification_status": {"enum": ["verified", "observed", "unmeasured", "rejected"]},
+        "source_evidence_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}
