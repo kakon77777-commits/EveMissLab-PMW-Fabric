@@ -103,11 +103,11 @@ class FederationCliTests(unittest.TestCase):
 
     def test_windows_short_alias_matches_long_allowlist_before_reparse_scan(self):
         requested = PureWindowsPath(
-            r"C:\Users\RUNNER~1\AppData\Local\Temp\tmp123\payload.json"
+            r"X:\Profiles\RUNNER~1\Temp\tmp123\payload.json"
         )
         short_root = requested.parent
         canonical_root = PureWindowsPath(
-            r"C:\Users\runneradmin\AppData\Local\Temp\tmp123"
+            r"X:\Profiles\runneradmin\Temp\tmp123"
         )
 
         def samefile(candidate, root):
