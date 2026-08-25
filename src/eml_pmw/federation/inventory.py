@@ -5,6 +5,11 @@ import hashlib
 from typing import Any
 
 from eml_wake.canonical import canonical_bytes
+import jsonschema
+
+from eml_pmw.integration.contracts import load_local_contract
+
+from .errors import FederationError
 
 from .store import FederationStore
 
@@ -49,6 +54,21 @@ class InventoryEventRecord:
         value["causal_parents"] = list(self.causal_parents)
         return value
 
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "InventoryEventRecord":
+        return cls(
+            value["event_id"],
+            value["event_digest"],
+            value["replica_id"],
+            value["store_generation"],
+            value["replica_seq"],
+            tuple(value["causal_parents"]),
+            value["payload_sha256"],
+            value["payload_bytes"],
+            value["fabric_payload_class"],
+            value["availability"],
+        )
+
 
 @dataclass(frozen=True)
 class ReplicaRange:
@@ -60,6 +80,16 @@ class ReplicaRange:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "ReplicaRange":
+        return cls(
+            value["replica_id"],
+            value["store_generation"],
+            value["minimum_sequence"],
+            value["maximum_sequence"],
+            value["event_count"],
+        )
 
 
 @dataclass(frozen=True)
@@ -88,6 +118,37 @@ class FederationInventory:
     @property
     def canonical_bytes(self) -> bytes:
         return canonical_bytes(self.to_dict())
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "FederationInventory":
+        try:
+            jsonschema.validate(
+                value, load_local_contract("federation-inventory-v1.schema.json")
+            )
+        except jsonschema.ValidationError as error:
+            raise FederationError("inventory_schema_invalid", "inventory") from error
+        events = tuple(InventoryEventRecord.from_dict(item) for item in value["events"])
+        ranges = tuple(ReplicaRange.from_dict(item) for item in value["replica_ranges"])
+        item = cls(
+            value["schema"],
+            value["inventory_id"],
+            value["generated_by_realm_id"],
+            events,
+            ranges,
+            tuple(value["causal_heads"]),
+            tuple(value["not_claimed"]),
+            value["inventory_digest"],
+        )
+        core = item.to_dict()
+        core.pop("inventory_digest")
+        if _digest(core) != item.inventory_digest:
+            raise FederationError("inventory_digest_mismatch", item.inventory_id)
+        identity_core = dict(core)
+        identity_core.pop("inventory_id")
+        expected_id = "inventory:sha256:" + _digest(identity_core).rsplit(":", 1)[-1]
+        if expected_id != item.inventory_id:
+            raise FederationError("inventory_id_mismatch", item.inventory_id)
+        return item
 
 
 @dataclass(frozen=True)

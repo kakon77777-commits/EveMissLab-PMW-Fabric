@@ -7,6 +7,7 @@ from typing import Any
 from eml_wake.canonical import canonical_bytes, loads_strict
 
 from .authority import AuthorityVerifier, verify_event_authority
+from .causal import classify_relation, validate_graph
 from .errors import FederationError
 from .models import FederatedEvent
 from .store import FederationStore
@@ -63,19 +64,39 @@ def detect_conflict(
     left_payload: bytes,
     right: FederatedEvent,
     right_payload: bytes,
+    *,
+    known_events: tuple[FederatedEvent, ...] | None = None,
 ) -> ConflictAnalysis:
     members = tuple(sorted((left.event_id, right.event_id)))
     subject = left.subject_ref if left.subject_ref == right.subject_ref else "multiple"
     if left.event_id == right.event_id and left.core_digest != right.core_digest:
         return ConflictAnalysis("conflict", "content_collision", members, subject)
-    known_ids = {left.event_id, right.event_id}
-    if any(
-        parent not in known_ids
-        for event in (left, right)
-        for parent in event.causal_parents
-    ):
+    if known_events is None:
+        known_ids = {left.event_id, right.event_id}
+        if any(
+            parent not in known_ids
+            for event in (left, right)
+            for parent in event.causal_parents
+        ):
+            return ConflictAnalysis(
+                "conflict", "causal_history_conflict", members, subject
+            )
+        ordered = (
+            left.event_id in right.causal_parents
+            or right.event_id in left.causal_parents
+        )
+    else:
+        graph = validate_graph(known_events)
+        if not graph.valid:
+            return ConflictAnalysis(
+                "conflict", "causal_history_conflict", members, subject
+            )
+        ordered = classify_relation(
+            known_events, left.event_id, right.event_id
+        ) in {"before", "after", "same"}
+    if ordered:
         return ConflictAnalysis(
-            "conflict", "causal_history_conflict", members, subject
+            "ordered", "concurrent_nonexclusive", members, subject
         )
     if left.subject_ref != right.subject_ref:
         return ConflictAnalysis(
@@ -157,7 +178,8 @@ def reconcile_event(
 
     candidates: list[tuple[ConflictAnalysis, FederatedEvent]] = []
     payload = store.event_payload(event)
-    for other in store.events():
+    all_events = store.events()
+    for other in all_events:
         if other.event_id == event_id:
             continue
         analysis = detect_conflict(
@@ -165,6 +187,7 @@ def reconcile_event(
             store.event_payload(other),
             event,
             payload,
+            known_events=all_events,
         )
         if analysis.conflict_class != "concurrent_nonexclusive":
             candidates.append((analysis, other))

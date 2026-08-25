@@ -1,0 +1,7 @@
+{
+  "action": "adopt_event",
+  "authority_ref": "authority:fixture",
+  "evidence_ref": "evidence:authority:fixture",
+  "status": "verified",
+  "subject_ref": "pmw-task:fixture"
+}
