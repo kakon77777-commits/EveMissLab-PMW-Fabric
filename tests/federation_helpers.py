@@ -57,6 +57,40 @@ def valid_event(**overrides):
     return value
 
 
+def event_at(sequence, event_id, parents=(), **overrides):
+    value = valid_event(
+        event_id=event_id,
+        replica_seq=sequence,
+        causal_parents=list(parents),
+        **overrides,
+    )
+    return value
+
+
+def event_for_replica(replica, sequence, event_id, parents=(), **overrides):
+    realm_id = f"realm:{replica}"
+    return event_at(
+        sequence,
+        event_id,
+        parents,
+        realm_ref={
+            "realm_id": realm_id,
+            "realm_kind": "fixture",
+            "issuer": "fixture",
+            "verification_status": "verified",
+            "evidence_refs": [f"fixture:realm:{replica}"],
+        },
+        replica_ref={
+            "replica_id": f"replica:{replica}",
+            "realm_id": realm_id,
+            "store_generation": "generation:1",
+            "verification_status": "verified",
+            "evidence_refs": [f"fixture:replica:{replica}"],
+        },
+        **overrides,
+    )
+
+
 def valid_config(**overrides):
     value = {
         "schema": "pmw-federation-config/v1",

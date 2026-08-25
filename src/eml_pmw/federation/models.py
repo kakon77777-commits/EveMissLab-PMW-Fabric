@@ -4,6 +4,8 @@ from dataclasses import asdict, dataclass
 import re
 from typing import Any
 
+from eml_wake.canonical import canonical_bytes
+
 from .canonical import event_digest
 from .errors import FederationError
 
@@ -196,3 +198,7 @@ class FederatedEvent:
     @property
     def core_digest(self):
         return event_digest(self.to_dict())
+
+    @property
+    def canonical_bytes(self) -> bytes:
+        return canonical_bytes(self.to_dict())
