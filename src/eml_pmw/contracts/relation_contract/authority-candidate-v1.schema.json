@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/authority-candidate-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "candidate_id", "subject_entity_ref", "run_ref", "action_intent_ref", "action_intent_digest", "relation_refs", "contract_ref", "contract_digest", "active_lifecycle_head", "representation_grant_refs", "representation_grant_digests", "party_evidence_pin_refs", "party_evidence_set_digest", "requested_resource_scope", "requested_action_scope", "risk", "approval_mode", "continuity_precondition", "expires_at", "clock_profile_id", "activation_time_ref", "activation_time_evidence_digest", "evaluator_profile_id", "evaluator_policy_version", "candidate_status", "reason_codes", "content_digest"],
+  "properties": {
+    "schema": {"const": "arcp/authority-candidate/0.1"},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "subject_entity_ref": {"type": "string", "minLength": 1},
+    "run_ref": {"type": "string", "minLength": 1},
+    "action_intent_ref": {"type": "string", "minLength": 1},
+    "action_intent_digest": {"$ref": "#/$defs/anyDigest"},
+    "relation_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "contract_ref": {"type": "string", "minLength": 1},
+    "contract_digest": {"$ref": "#/$defs/profileDigest"},
+    "active_lifecycle_head": {"type": "string", "minLength": 1},
+    "representation_grant_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "representation_grant_digests": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/profileDigest"}},
+    "party_evidence_pin_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "party_evidence_set_digest": {"$ref": "#/$defs/profileDigest"},
+    "requested_resource_scope": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "requested_action_scope": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "risk": {"enum": ["R0", "R1"]},
+    "approval_mode": {"const": "all-named-parties"},
+    "continuity_precondition": {"const": "none"},
+    "expires_at": {"$ref": "#/$defs/instant"},
+    "clock_profile_id": {"type": "string", "minLength": 1},
+    "activation_time_ref": {"type": "string", "minLength": 1},
+    "activation_time_evidence_digest": {"$ref": "#/$defs/profileDigest"},
+    "evaluator_profile_id": {"type": "string", "minLength": 1},
+    "evaluator_policy_version": {"type": "string", "minLength": 1},
+    "candidate_status": {"enum": ["eligible", "blocked", "indeterminate"]},
+    "reason_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "content_digest": {"$ref": "#/$defs/profileDigest"}
+  },
+  "allOf": [
+    {"if": {"properties": {"candidate_status": {"const": "eligible"}}}, "then": {"properties": {"reason_codes": {"maxItems": 0}}}, "else": {"properties": {"reason_codes": {"minItems": 1}}}}
+  ],
+  "$defs": {
+    "anyDigest": {"type": "string", "pattern": "^sha256:(?:[a-z0-9-]+:)?[0-9a-f]{64}$"},
+    "profileDigest": {"type": "string", "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"},
+    "instant": {"type": "object", "additionalProperties": false, "required": ["instant_ref", "clock_profile_id", "normalized_unix_ns", "uncertainty_ns", "verification_status", "source_evidence_refs"], "properties": {"instant_ref": {"type": "string", "minLength": 1}, "clock_profile_id": {"type": "string", "minLength": 1}, "normalized_unix_ns": {"type": "string", "pattern": "^(?:0|-?[1-9][0-9]*)$"}, "uncertainty_ns": {"type": "integer", "minimum": 0}, "verification_status": {"enum": ["verified", "observed", "unmeasured", "rejected"]}, "source_evidence_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}}}
+  }
+}

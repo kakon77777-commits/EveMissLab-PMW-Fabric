@@ -219,10 +219,14 @@ def valid_grant_authority_evidence(party="a", **overrides):
         "grantor_party_ref": f"resident:fixture:{party}",
         "authority_source_ref": f"authority-root:fixture:{party}",
         "resolver_profile_id": "authority-resolver:fixture:v1",
-        "permitted_lifecycle_actions": ["contract.proposed", "contract.party_accepted"],
+        "permitted_lifecycle_actions": [
+            "contract.proposed",
+            "contract.party_accepted",
+            "contract.activated",
+        ],
         "permitted_contract_scope": ["contract:fixture:collaboration"],
-        "valid_from": normalized_instant("900", 0),
-        "expires_at": normalized_instant("3000", 0),
+        "valid_from": normalized_instant("900000000", 0),
+        "expires_at": normalized_instant("3000000000", 0),
         "dependency_refs": [],
         "content_digest": "",
     }
@@ -236,12 +240,16 @@ def valid_representation_grant(party="a", **overrides):
         "principal_party_ref": f"resident:fixture:{party}",
         "representative_ref": f"instance:fixture:{party}:1",
         "representative_kind": "instance",
-        "allowed_lifecycle_actions": ["contract.proposed", "contract.party_accepted"],
+        "allowed_lifecycle_actions": [
+            "contract.proposed",
+            "contract.party_accepted",
+            "contract.activated",
+        ],
         "contract_scope": ["contract:fixture:collaboration"],
         "relation_scope": ["relation:fixture:collaboration"],
-        "valid_from": normalized_instant("1000", 0),
-        "expires_at": normalized_instant("2500", 0),
-        "issued_at": normalized_instant("950", 0),
+        "valid_from": normalized_instant("1000000000", 0),
+        "expires_at": normalized_instant("2500000000", 0),
+        "issued_at": normalized_instant("950000000", 0),
         "revocable": True,
         "redelegable": False,
         "grant_authority_ref": f"grant-authority-evidence:fixture:{party}",
@@ -277,7 +285,7 @@ def valid_party_acceptance(party="a", **overrides):
         "party_evidence_pin_refs": [f"party-evidence-pin:fixture:{party}:1"],
         "acceptance_evidence_refs": [f"evidence:acceptance:{party}:1"],
         "acceptance_evidence_root_refs": [f"evidence-root:acceptance:{party}"],
-        "accepted_at": normalized_instant("1100", 0),
+        "accepted_at": normalized_instant("1100000000", 0),
         "content_digest": "",
     }
     return mutate_and_rebind(value, overrides)
@@ -385,7 +393,7 @@ def valid_relation_contract_event(
         "activation_policy_digest": (
             valid_activation_policy()["content_digest"] if activation else None
         ),
-        "created_time": normalized_instant("1200", 0),
+        "created_time": normalized_instant("1200000000", 0),
         "local_recorded_at": "2026-08-26T01:00:00Z",
         "correction_of": None,
         "withdraws": None,
@@ -400,6 +408,132 @@ def fixture_objects(*values):
     for value in values:
         result[value["content_digest"]] = deepcopy(value)
     return result
+
+
+def valid_action_intent(**overrides):
+    value = {
+        "run_ref": "run:fixture:1",
+        "action_intent_ref": "action:fixture:inspect:1",
+        "subject_entity_ref": "resident:fixture:a",
+        "requested_resource_scope": ["resource:fixture:shared#read"],
+        "requested_action_scope": ["workspace.inspect"],
+        "risk": "R1",
+        "approval_mode": "all-named-parties",
+        "continuity_precondition": "none",
+    }
+    value.update(deepcopy(overrides))
+    value["action_intent_digest"] = "sha256:" + hashlib.sha256(
+        canonical_bytes(value)
+    ).hexdigest()
+    return value
+
+
+def valid_commitment(**overrides):
+    value = {
+        "schema": "arcp/commitment/0.1",
+        "commitment_id": "commitment:fixture:inspect",
+        "version": 1,
+        "parent_version_digest": None,
+        "contract_ref": "contract:fixture:collaboration",
+        "contract_digest": valid_contract_version()["content_digest"],
+        "obligated_party_ref": "resident:fixture:a",
+        "beneficiary_party_refs": ["resident:fixture:b"],
+        "action_class": "workspace.inspect",
+        "scope": ["resource:fixture:shared#read"],
+        "due_or_review_at": normalized_instant("1800000000", 0),
+        "status": "active",
+        "execution_refs": [],
+        "content_digest": "",
+    }
+    return mutate_and_rebind(value, overrides)
+
+
+def valid_authority_candidate(**overrides):
+    contract = valid_contract_version()
+    now = normalized_instant("1500000000", 0)
+    action = valid_action_intent()
+    grant_a = valid_representation_grant("a")
+    grant_b = valid_representation_grant("b")
+    pin_a = valid_party_pin("a")
+    pin_b = valid_party_pin("b")
+    value = {
+        "schema": "arcp/authority-candidate/0.1",
+        "candidate_id": "candidate:fixture:inspect:1",
+        "subject_entity_ref": action["subject_entity_ref"],
+        "run_ref": action["run_ref"],
+        "action_intent_ref": action["action_intent_ref"],
+        "action_intent_digest": action["action_intent_digest"],
+        "relation_refs": [contract["relation_version_ref"]],
+        "contract_ref": contract["contract_id"],
+        "contract_digest": contract["content_digest"],
+        "active_lifecycle_head": "event:contract:activate:v1",
+        "representation_grant_refs": [
+            grant_a["representation_grant_id"],
+            grant_b["representation_grant_id"],
+        ],
+        "representation_grant_digests": [
+            grant_a["content_digest"],
+            grant_b["content_digest"],
+        ],
+        "party_evidence_pin_refs": [pin_a["content_digest"], pin_b["content_digest"]],
+        "party_evidence_set_digest": independent_profile_digest(
+            {"digests": sorted([pin_a["content_digest"], pin_b["content_digest"]])}
+        ),
+        "requested_resource_scope": list(action["requested_resource_scope"]),
+        "requested_action_scope": list(action["requested_action_scope"]),
+        "risk": action["risk"],
+        "approval_mode": action["approval_mode"],
+        "continuity_precondition": action["continuity_precondition"],
+        "expires_at": contract["expires_at"],
+        "clock_profile_id": now["clock_profile_id"],
+        "activation_time_ref": now["instant_ref"],
+        "activation_time_evidence_digest": independent_profile_digest(now),
+        "evaluator_profile_id": "arcp-evaluator:fixture:v1",
+        "evaluator_policy_version": "policy:fixture:v1",
+        "candidate_status": "eligible",
+        "reason_codes": [],
+        "content_digest": "",
+    }
+    return mutate_and_rebind(value, overrides)
+
+
+def valid_authority_resolution(**overrides):
+    candidate = valid_authority_candidate()
+    value = {
+        "schema": "arcp/authority-resolution/0.1",
+        "resolution_id": "arcp:authority:fixture:1",
+        "run_id": candidate["run_ref"],
+        "action_id": candidate["action_intent_ref"],
+        "action_hash": candidate["action_intent_digest"],
+        "status": "authorized",
+        "sources": ["contract-authorized"],
+        "subject_entity_ref": candidate["subject_entity_ref"],
+        "resource_scope": list(candidate["requested_resource_scope"]),
+        "relation_refs": list(candidate["relation_refs"]),
+        "contract_refs": [candidate["contract_ref"]],
+        "revocable": True,
+        "expires_at": deepcopy(candidate["expires_at"]),
+        "continuity_precondition": candidate["continuity_precondition"],
+    }
+    value.update(deepcopy(overrides))
+    return value
+
+
+def valid_evaluation_receipt(**overrides):
+    candidate = valid_authority_candidate()
+    value = {
+        "schema": "arcp/authority-evaluation-receipt/0.1",
+        "candidate_ref": candidate["candidate_id"],
+        "candidate_digest": candidate["content_digest"],
+        "evaluator_profile_id": candidate["evaluator_profile_id"],
+        "evaluator_implementation_version": "fixture-evaluator:1",
+        "evaluator_policy_version": candidate["evaluator_policy_version"],
+        "evaluated_evidence_set_digest": candidate["party_evidence_set_digest"],
+        "authority_resolution": valid_authority_resolution(),
+        "evaluated_at": normalized_instant("1500000000", 0),
+        "receipt_digest": "",
+    }
+    return mutate_and_rebind(value, overrides, digest_field="receipt_digest")
 
 
 @contextmanager

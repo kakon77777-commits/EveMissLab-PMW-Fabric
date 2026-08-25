@@ -46,6 +46,7 @@ class LifecycleProjection:
     contract_states: dict[str, str]
     contract_version_states: dict[str, str]
     active_heads: dict[str, str]
+    active_head_digests: dict[str, str]
     acceptances: dict[str, tuple[str, ...]]
     representation_states: dict[str, str]
     commitment_states: dict[str, str]
@@ -244,6 +245,7 @@ class _ReducerState:
             dict(sorted(self.contract_states.items())),
             dict(sorted(self.contract_version_states.items())),
             dict(sorted(self.active_heads.items())),
+            dict(sorted(self.active_head_digests.items())),
             {
                 digest: tuple(sorted(items))
                 for digest, items in sorted(self.acceptances_by_target.items())
