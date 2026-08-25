@@ -1,0 +1,91 @@
+{
+  "adapter_visibility": {
+    "automatic_replay": false,
+    "inference_barriers": 6,
+    "schema": "pmw.adapter-visibility-evidence/0.1"
+  },
+  "cross_seat_review": {
+    "blocking": 0,
+    "non_blocking_code_findings": 0,
+    "review_ref": "runtime-task-handoff:fabric-f1-final-review",
+    "review_sha256": "FDDE75E407A66EF43FC4861EC5C3CED2F783385E05EBFDA7AE71CF0D7DD49E4C",
+    "status": "PASS"
+  },
+  "effect_counts": {
+    "ctcl_calls": 0,
+    "network_calls": 0,
+    "private_reads": 0,
+    "production_registry_writes": 0,
+    "provider_calls": 0
+  },
+  "failure_chain": [
+    {
+      "conclusion": "failure",
+      "finding": "windows_short_alias_rejected_before_path_resolution",
+      "run_id": 32858482772
+    },
+    {
+      "conclusion": "failure",
+      "finding": "diagnostic_run_confirmed_RUNNER_tilde_1_vs_runneradmin",
+      "run_id": 32858975180
+    },
+    {
+      "conclusion": "failure",
+      "finding": "diagnostic_fixture_triggered_publication_local_path_gate",
+      "run_id": 32859308426
+    },
+    {
+      "conclusion": "success",
+      "finding": "windows_alias_fix_and_portable_fixture_verified",
+      "run_id": 32859449827
+    }
+  ],
+  "focused_tests": {
+    "failed": 0,
+    "passed": 77
+  },
+  "github_actions": {
+    "conclusion": "success",
+    "matrix": [
+      "windows-3.11",
+      "windows-3.14",
+      "ubuntu-3.11",
+      "ubuntu-3.14"
+    ],
+    "run_id": 32859449827
+  },
+  "not_claimed": [
+    "merge",
+    "release",
+    "deployment",
+    "live_federation",
+    "real_provider_execution",
+    "ctcl_registration",
+    "production_registry_mutation",
+    "private_residence_access",
+    "resident_identity_continuity"
+  ],
+  "offline_boundary": {
+    "findings": 0,
+    "injected_controls": 4
+  },
+  "ral_seam": {
+    "manifest_digest": "sha256:sedb-ral-json-nfc-codepoint-v1:f22a06d08c6d3a0c4a0ab60ded7b9696585c8d1cb08f59ff465e80a87b270529",
+    "schema_id": "https://evemisslab.com/schemas/limen/ral-view-v0.2.json",
+    "source_commit": "077606f08576b38e93762d7eb4d8720b36766fc1",
+    "source_schema_bytes": 6029,
+    "source_schema_sha256": "32aefbb92345538b0320930e237f35791c0c43c5a1f7e40eace5d7248d803373",
+    "status": "verified",
+    "vendored_schema_body": false
+  },
+  "reviewed_head": "fae344c8a8104def9f72be893e5dc58a4ea2f7e1",
+  "schema": "pmw-federation-v1-acceptance/0.1",
+  "source_tests": {
+    "cases": 276,
+    "failed": 0,
+    "passed": 274,
+    "skipped": 2
+  },
+  "version": "0.3.0",
+  "wheel_sha256": "1E93B017B37EE31031ABD1F33B68F222B82F60B470947DBD4423A2445F13A2BE"
+}

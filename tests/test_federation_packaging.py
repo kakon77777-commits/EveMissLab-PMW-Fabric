@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from importlib.resources import files
+import json
 from pathlib import Path
 import os
 import shutil
@@ -28,6 +29,22 @@ FEDERATION_SCHEMAS = (
 
 
 class FederationPackagingTests(unittest.TestCase):
+    def test_checked_in_acceptance_evidence_matches_reviewed_candidate(self):
+        path = ROOT / "evidence" / "release" / "2026-08-25-federation-v1-acceptance.json"
+        value = json.loads(path.read_text(encoding="utf-8"))
+
+        self.assertEqual(value["schema"], "pmw-federation-v1-acceptance/0.1")
+        self.assertEqual(value["version"], "0.3.0")
+        self.assertEqual(
+            value["reviewed_head"],
+            "fae344c8a8104def9f72be893e5dc58a4ea2f7e1",
+        )
+        self.assertEqual(value["source_tests"], {"cases": 276, "failed": 0, "passed": 274, "skipped": 2})
+        self.assertEqual(value["cross_seat_review"]["blocking"], 0)
+        self.assertEqual(value["cross_seat_review"]["status"], "PASS")
+        self.assertEqual(value["github_actions"]["run_id"], 32859449827)
+        self.assertEqual(value["effect_counts"], {"ctcl_calls": 0, "network_calls": 0, "private_reads": 0, "production_registry_writes": 0, "provider_calls": 0})
+
     def test_version_and_package_resources_publish_complete_profile(self):
         project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))[
             "project"
