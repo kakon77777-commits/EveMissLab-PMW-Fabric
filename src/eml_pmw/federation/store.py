@@ -201,6 +201,15 @@ class FederationStore:
             raise FederationError("payload_integrity_failed", event.event_id)
         return data
 
+    def conflicts(self) -> tuple[dict[str, Any], ...]:
+        return tuple(_read_object(path) for path in sorted(self.conflicts_dir.glob("*.json")))
+
+    def resolutions(self) -> tuple[dict[str, Any], ...]:
+        return tuple(
+            _read_object(path)
+            for path in sorted(self.resolutions_dir.glob("*/*.json"))
+        )
+
     def quarantine_event(self, code: str, event: FederatedEvent) -> None:
         self._quarantine(
             code,
