@@ -1,6 +1,6 @@
 # Federated Event and Sync Profile v1
 
-**Status:** Roadmap-approved design; written-spec review pending  
+**Status:** Neo.K-approved written specification; implementation planning authorized
 **Date:** 2026-08-25  
 **Project:** EveMissLab PMW Fabric  
 **Parent architecture:** `ARCP_Centered_Federated_Shared_World_Architecture_v0.1.md`  
@@ -426,7 +426,8 @@ The following belong to later subprojects:
 
 ## 22. Review gate
 
-This document is a design specification, not implementation authority. After
-Neo.K approves the written spec, one implementation plan may be authored for
-this profile. Implementation uses one primary executor and at most one FCAO
-Twin for necessary final checking; it does not use per-task rotating reviewers.
+Neo.K approved this written specification on 2026-08-25 and authorized one
+implementation plan for this profile. Implementation uses one primary executor
+and at most one FCAO Twin for necessary final checking; it does not use per-task
+rotating reviewers. The implementation plan does not itself authorize push,
+merge, deployment, provider calls, or expansion into later subprojects.
