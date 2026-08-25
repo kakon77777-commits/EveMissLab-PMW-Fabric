@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/secure-canvas-messages-v1.schema.json",
+  "title": "Secure Canvas Messages v1",
+  "oneOf": [
+    { "$ref": "#/$defs/hello" },
+    { "$ref": "#/$defs/helloAck" },
+    { "$ref": "#/$defs/update" },
+    { "$ref": "#/$defs/presence" },
+    { "$ref": "#/$defs/runtimePresence" },
+    { "$ref": "#/$defs/runtimePresenceRejected" },
+    { "$ref": "#/$defs/runtimePresenceRemoved" },
+    { "$ref": "#/$defs/error" }
+  ],
+  "$defs": {
+    "stateVector": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "hello": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientId", "authToken", "stateVector"],
+      "properties": {
+        "type": { "const": "hello" },
+        "clientId": { "type": "string", "minLength": 1 },
+        "authToken": { "type": "string", "minLength": 1 },
+        "stateVector": { "$ref": "#/$defs/stateVector" },
+        "presence": { "type": "object" }
+      }
+    },
+    "helloAck": {
+      "type": "object",
+      "required": ["type", "roomId", "stateVector", "missingUpdates", "presence", "runtimePresence", "identity"],
+      "properties": {
+        "type": { "const": "hello_ack" },
+        "roomId": { "type": "string", "minLength": 1 },
+        "stateVector": { "$ref": "#/$defs/stateVector" },
+        "missingUpdates": { "type": "array" },
+        "presence": { "type": "array" },
+        "runtimePresence": { "type": "array" },
+        "identity": {
+          "type": "object",
+          "required": ["verified", "principalId"],
+          "properties": {
+            "verified": { "const": true },
+            "principalId": { "type": "string", "minLength": 1 },
+            "semanticAgentId": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "update": { "type": "object", "required": ["type", "update"], "properties": { "type": { "const": "update" }, "update": { "type": "object" } } },
+    "presence": { "type": "object", "required": ["type", "presence"], "properties": { "type": { "const": "presence" }, "presence": { "type": "object" } } },
+    "runtimePresence": { "type": "object", "required": ["type", "runtime"], "properties": { "type": { "const": "runtime_presence" }, "runtime": { "$ref": "ephemeral-runtime-presence-v1.schema.json" } } },
+    "runtimePresenceRejected": { "type": "object", "required": ["type", "reason", "runtimePresence"], "properties": { "type": { "const": "runtime_presence_rejected" }, "reason": { "enum": ["stale_revision", "stale_sequence"] }, "runtimePresence": { "type": "object" } } },
+    "runtimePresenceRemoved": { "type": "object", "required": ["type", "runtimePresence"], "properties": { "type": { "const": "runtime_presence_removed" }, "runtimePresence": { "type": "object" } } },
+    "error": { "type": "object", "required": ["type", "message"], "properties": { "type": { "const": "error" }, "message": { "type": "string" } } }
+  }
+}

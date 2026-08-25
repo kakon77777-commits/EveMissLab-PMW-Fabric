@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/mrmic-capabilities-v1.schema.json",
+  "title": "MRMIC Capabilities v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "mrmicVersion", "canvasSchemaVersion", "mcpProtocolProfile", "projectionModes", "authModes", "resourcePortal", "runtimePresence", "livePortalHost"],
+  "properties": {
+    "schema": { "const": "mrmic-capabilities/v1" },
+    "mrmicVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "canvasSchemaVersion": { "type": "string", "minLength": 1 },
+    "mcpProtocolProfile": { "type": "object", "required": ["protocolVersion", "profile"] },
+    "projectionModes": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "authModes": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "resourcePortal": { "type": "object", "required": ["supported", "schemaVersion"] },
+    "runtimePresence": { "type": "object", "required": ["supported", "schemaVersion", "durable"] },
+    "livePortalHost": { "type": "object", "required": ["supported", "stateVersion"] }
+  }
+}

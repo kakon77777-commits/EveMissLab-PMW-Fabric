@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/live-portal-host-v1.schema.json",
+  "title": "MRMIC Live Portal Host State v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["portalObjectId", "mounted", "visible", "focused", "controlOwner"],
+  "properties": {
+    "portalObjectId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mounted": {
+      "type": "boolean",
+      "description": "Whether the provider-owned surface is projected by the host."
+    },
+    "visible": {
+      "type": "boolean",
+      "description": "Whether the mounted projection intersects the current Canvas viewport."
+    },
+    "focused": {
+      "type": "boolean",
+      "description": "Whether the portal currently owns UI focus."
+    },
+    "controlOwner": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "Verified principal currently holding revocable interaction control, or null."
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/native-resource-portal-v1.schema.json",
+  "title": "Native Resource Portal v1 Canvas Object",
+  "type": "object",
+  "required": ["id", "canvasId", "type", "transform", "style", "childIds", "bindings", "metadata", "createdBy", "createdAt", "updatedAt", "revision"],
+  "properties": {
+    "type": { "const": "resource_portal" },
+    "metadata": {
+      "type": "object",
+      "required": ["portalSchema", "portal"],
+      "properties": {
+        "portalSchema": { "const": "native_resource_portal_v1" },
+        "portal": {
+          "type": "object",
+          "required": ["portalId", "pmwWorkspaceId", "provider", "resourceKind", "providerResourceId", "displayMode", "interactionMode"]
+        }
+      }
+    }
+  }
+}

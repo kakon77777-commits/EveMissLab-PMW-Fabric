@@ -1,0 +1,34 @@
+{
+  "schema": "pmw-upstream-contract-lock/v1",
+  "source": {
+    "repository": "https://github.com/kakon77777-commits/MRMIC_NVCL",
+    "commit": "791efb9d98270d4db9c25f257aac805196ba62e8"
+  },
+  "files": [
+    {
+      "name": "ephemeral-runtime-presence-v1.schema.json",
+      "schema_id": "https://evemisslab.com/schemas/ephemeral-runtime-presence-v1.schema.json",
+      "sha256": "5ff2932eb07b69ffb2e4a071017dab33d055eb7f97c6b6bc0bd8d3e31cf2ae5e"
+    },
+    {
+      "name": "live-portal-host-v1.schema.json",
+      "schema_id": "https://evemisslab.com/schemas/live-portal-host-v1.schema.json",
+      "sha256": "1c9ddf86ae83eae039963fe8ae19ff0b33795f3a886423a99db0f9cd3482b7a6"
+    },
+    {
+      "name": "mrmic-capabilities-v1.schema.json",
+      "schema_id": "https://evemisslab.com/schemas/mrmic-capabilities-v1.schema.json",
+      "sha256": "a51a8611926bbf322d75308cc17a7c80a6348cbb4629a89da2375d0a2071f73e"
+    },
+    {
+      "name": "native-resource-portal-v1.schema.json",
+      "schema_id": "https://evemisslab.com/schemas/native-resource-portal-v1.schema.json",
+      "sha256": "a6204a402d3fd971f6188c92c385b792da30f457142ff13cc3c69bc389cc6832"
+    },
+    {
+      "name": "secure-canvas-messages-v1.schema.json",
+      "schema_id": "https://evemisslab.com/schemas/secure-canvas-messages-v1.schema.json",
+      "sha256": "998f3bc1cc10563e1cec416451e427fd860ad07cc956ad0c923537985d14f54c"
+    }
+  ]
+}

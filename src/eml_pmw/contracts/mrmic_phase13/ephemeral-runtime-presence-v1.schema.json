@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/ephemeral-runtime-presence-v1.schema.json",
+  "title": "Ephemeral Runtime Presence v1 Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["provider", "providerResourceId", "runtimeEpochId", "status", "revision", "sequence"],
+  "properties": {
+    "provider": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "providerResourceId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "runtimeEpochId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "status": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "kind": { "type": "string", "maxLength": 64 },
+    "focused": { "type": "boolean" },
+    "interactiveReady": { "type": "boolean" },
+    "launchPending": { "type": "boolean" },
+    "coordinates": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "workspaceId": { "type": "string", "maxLength": 256 },
+        "tabId": { "type": "string", "maxLength": 256 },
+        "paneId": { "type": "string", "maxLength": 256 }
+      }
+    }
+  }
+}
