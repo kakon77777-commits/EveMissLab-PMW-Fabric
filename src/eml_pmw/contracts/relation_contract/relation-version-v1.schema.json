@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/relation-version-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "relation_id", "version", "parent_version_digest", "relation_class", "relation_type", "party_refs", "scope", "source_evidence_refs", "acceptance_rule", "not_claimed", "content_digest"],
+  "properties": {
+    "schema": {"const": "arcp/relation-version/0.1"},
+    "relation_id": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "parent_version_digest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/digest"}]},
+    "relation_class": {"enum": ["descriptive", "consensual", "authority-bearing"]},
+    "relation_type": {"type": "string", "minLength": 1},
+    "party_refs": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "scope": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "source_evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "acceptance_rule": {"enum": ["none", "all-named-parties"]},
+    "not_claimed": {"type": "array", "minItems": 1, "uniqueItems": true, "contains": {"const": "relation_grants_authority"}, "items": {"type": "string", "minLength": 1}},
+    "content_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"}}
+}

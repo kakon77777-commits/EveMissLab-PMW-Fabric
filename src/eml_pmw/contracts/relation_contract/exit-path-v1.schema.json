@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/exit-path-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "exit_path_id", "authorized_party_refs", "trigger_kind", "unilateral_allowed", "notice_duration_ms", "max_effective_delay_ms", "required_evidence_refs", "effects", "future_candidate_invalidation", "content_digest"],
+  "properties": {
+    "schema": {"const": "arcp/exit-path/0.1"},
+    "exit_path_id": {"type": "string", "minLength": 1},
+    "authorized_party_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "trigger_kind": {"enum": ["unilateral_notice", "mutual_acceptance", "breach", "expiry", "policy_event"]},
+    "unilateral_allowed": {"type": "boolean"},
+    "notice_duration_ms": {"type": "integer", "minimum": 0},
+    "max_effective_delay_ms": {"type": "integer", "minimum": 0},
+    "required_evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "effects": {"enum": ["terminate_contract", "suspend_contract", "withdraw_acceptance"]},
+    "future_candidate_invalidation": {"const": "immediate"},
+    "content_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"}}
+}

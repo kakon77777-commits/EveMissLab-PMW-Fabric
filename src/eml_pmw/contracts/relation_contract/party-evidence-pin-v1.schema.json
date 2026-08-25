@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/party-evidence-pin-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "party_ref", "party_kind", "resolver_profile_id", "resolver_schema_id", "resolver_source_ref", "resolver_source_digest", "state_view_digest", "state_head_ref", "party_status", "binding_ref", "binding_status", "binding_ambiguity", "adapter_verification_status", "observed_time_ref", "observed_time_status", "content_digest"],
+  "properties": {
+    "schema": {"const": "arcp/party-evidence-pin/0.1"},
+    "party_ref": {"type": "string", "minLength": 1},
+    "party_kind": {"enum": ["resident", "principal", "organization", "fixture"]},
+    "resolver_profile_id": {"type": "string", "minLength": 1},
+    "resolver_schema_id": {"type": "string", "minLength": 1},
+    "resolver_source_ref": {"type": "string", "minLength": 1},
+    "resolver_source_digest": {"$ref": "#/$defs/digest"},
+    "state_view_digest": {"$ref": "#/$defs/digest"},
+    "state_head_ref": {"type": "string", "minLength": 1},
+    "party_status": {"enum": ["active", "suspended", "expired", "tombstoned", "unmeasured"]},
+    "binding_ref": {"type": ["string", "null"]},
+    "binding_status": {"enum": ["active", "suspended", "expired", "tombstoned", "ambiguous", "unmeasured"]},
+    "binding_ambiguity": {"type": "boolean"},
+    "adapter_verification_status": {"enum": ["verified", "observed", "claimed", "unmeasured", "rejected"]},
+    "observed_time_ref": {"type": ["string", "null"]},
+    "observed_time_status": {"enum": ["verified", "observed", "unmeasured", "rejected"]},
+    "content_digest": {"$ref": "#/$defs/profileDigest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:(?:[a-z0-9-]+:)?[0-9a-f]{64}$"},
+    "profileDigest": {"type": "string", "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"}
+  }
+}

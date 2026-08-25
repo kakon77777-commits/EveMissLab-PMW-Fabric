@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/survival-clause-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "survival_clause_id", "class", "scope", "effective_after_termination", "expires_at", "future_authority", "content_digest"],
+  "properties": {
+    "schema": {"const": "arcp/survival-clause/0.1"},
+    "survival_clause_id": {"type": "string", "minLength": 1},
+    "class": {"enum": ["audit_retention", "attribution", "confidentiality", "non_repudiation"]},
+    "scope": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "effective_after_termination": {"const": true},
+    "expires_at": {"type": ["object", "null"]},
+    "future_authority": {"const": false},
+    "content_digest": {"type": "string", "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"}
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/termination-terms-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "terminal_event_kinds", "terminal_precedence", "candidate_invalidation", "preserve_audit_history", "commitment_disposition", "allowed_survival_clause_refs", "content_digest"],
+  "properties": {
+    "schema": {"const": "arcp/termination-terms/0.1"},
+    "terminal_event_kinds": {"const": ["contract.expired", "contract.terminated"]},
+    "terminal_precedence": {"const": true},
+    "candidate_invalidation": {"const": "immediate"},
+    "preserve_audit_history": {"const": true},
+    "commitment_disposition": {"enum": ["terminate", "preserve_named_survival_clauses"]},
+    "allowed_survival_clause_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "content_digest": {"type": "string", "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"}
+  }
+}
