@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/pmw-arcp-mrmic-integration-profile-v1.schema.json",
+  "title": "ARCP PMW MRMIC Integration Profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "profileId", "arcp", "mrmic", "economicTerms"],
+  "properties": {
+    "schema": {"const": "pmw-arcp-mrmic-integration-profile/v1"},
+    "profileId": {"const": "evemisslab:pmw:arcp-mrmic:v1"},
+    "arcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceCommit", "hashBasis", "idsSha256", "typesSha256", "entityIdKind"],
+      "properties": {
+        "sourceCommit": {"const": "c47300c961b20eac0878ac8c94df95d0df34e688"},
+        "hashBasis": {"const": "git_blob_bytes"},
+        "idsSha256": {"const": "60a4a7991f90254e178010c937ffbf390c1db2e9da8b15c0c3ae104f0a4d0717"},
+        "typesSha256": {"const": "9119691c4fb24ca9257029c87915302bcbbcff73c153bced32c8d3f76045331d"},
+        "entityIdKind": {"const": "arcp_agent"}
+      }
+    },
+    "mrmic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceCommit", "capabilitiesSchema", "mrmicVersion", "canvasSchemaVersion", "mcpProtocolVersion", "mcpProfile", "projectionMode", "authMode", "runtimePresenceSchema", "livePortalHostState"],
+      "properties": {
+        "sourceCommit": {"const": "791efb9d98270d4db9c25f257aac805196ba62e8"},
+        "capabilitiesSchema": {"const": "mrmic-capabilities/v1"},
+        "mrmicVersion": {"const": "0.14.0"},
+        "canvasSchemaVersion": {"const": "mrmic-canvas/0.14"},
+        "mcpProtocolVersion": {"const": "2025-11-25"},
+        "mcpProfile": {"const": "stateful-streamable-http-subset"},
+        "projectionMode": {"const": "native_resource_portal_v1"},
+        "authMode": {"const": "bearer_principal_v1"},
+        "runtimePresenceSchema": {"const": "ephemeral_runtime_presence_v1"},
+        "livePortalHostState": {"const": "live_portal_host_v1"}
+      }
+    },
+    "economicTerms": {"type": "null"}
+  }
+}
