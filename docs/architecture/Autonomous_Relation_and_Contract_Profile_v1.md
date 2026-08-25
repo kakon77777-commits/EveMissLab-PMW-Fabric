@@ -194,6 +194,7 @@ binding_ambiguity           boolean
 adapter_verification_status verified | observed | claimed | unmeasured | rejected
 observed_time_ref
 observed_time_status
+content_digest
 ```
 
 For a RAL resident, the pin additionally identifies the exact public-view
@@ -266,6 +267,7 @@ authority_candidate_specs[]
 constraints[]
 risk_ceiling                R0 | R1
 activation_policy_ref
+activation_policy_digest
 approval_mode
 effective_not_before
 expires_at
@@ -440,6 +442,7 @@ representation_grant_ref
 representation_grant_digest
 party_evidence_pin_refs[]
 acceptance_evidence_refs[]
+acceptance_evidence_root_refs[]
 accepted_at
 content_digest
 ```
@@ -486,6 +489,9 @@ Required fields:
 ```text
 candidate_id
 subject_entity_ref
+run_ref
+action_intent_ref
+action_intent_digest
 relation_refs[]
 contract_ref
 contract_digest
@@ -499,6 +505,10 @@ requested_action_scope[]
 risk
 approval_mode
 continuity_precondition
+expires_at
+clock_profile_id
+activation_time_ref
+activation_time_evidence_digest
 evaluator_profile_id
 evaluator_policy_version
 candidate_status            eligible | blocked | indeterminate
@@ -528,23 +538,31 @@ evaluated_at
 receipt_digest
 ```
 
-Any change to contract digest, lifecycle head, representation grant, party
-evidence set, requested scope/risk, or evaluator policy invalidates the receipt.
-An old receipt cannot be replayed after amendment, revocation, expiry, RAL head
-advance, or policy change.
+Any change to action intent/digest, contract digest, lifecycle head,
+representation grant, party evidence set, requested scope/risk, or evaluator
+policy invalidates the receipt. The embedded ARCP `run_id`, `action_id`, and
+`action_hash` must equal `run_ref`, `action_intent_ref`, and
+`action_intent_digest` from the candidate. An old receipt cannot be replayed
+after action replacement, amendment, revocation, expiry, RAL head advance, or
+policy change.
 
 Stored receipts remain historical evidence. A consumer may mark a receipt
 `current` only after recomputing the candidate and proving exact equality of:
 
 ```text
 candidate_digest
+run_ref
+action_intent_ref
+action_intent_digest
 active_lifecycle_head
 contract_digest
 representation_grant_digest_set
 party_evidence_set_digest
 evaluator_profile_id
 evaluator_policy_version
-clock_profile_id and relevant uncertainty boundary
+clock_profile_id
+activation_time_ref
+activation_time_evidence_digest
 requested scope and risk
 ```
 
@@ -909,6 +927,7 @@ activation_risk_exceeded
 activation_continuity_forbidden
 terminal_transition_forbidden
 authority_candidate_stale
+action_intent_digest_mismatch
 authority_evaluator_unavailable
 authority_resolution_stale
 unilateral_amendment_forbidden
