@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/relation-contract-event-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "event_id", "event_kind", "subject_ref", "object_ref", "object_digest", "causal_parents", "claimed_actor_ref", "representation_grant_ref", "representation_grant_digest", "lifecycle_transition_authority_ref", "lifecycle_transition_authority_digest", "supersedes_active_head", "acceptance_set_digest", "representation_set_digest", "party_evidence_set_digest", "activation_policy_digest", "created_time", "local_recorded_at", "correction_of", "withdraws", "not_claimed"],
+  "properties": {
+    "schema": {"const": "arcp/relation-contract-event/0.1"},
+    "event_id": {"type": "string", "minLength": 1},
+    "event_kind": {"enum": ["relation.recorded", "relation.proposed", "relation.party_accepted", "relation.disputed", "relation.withdrawn", "relation.superseded", "contract.drafted", "contract.proposed", "contract.counterproposed", "contract.party_accepted", "contract.party_acceptance_withdrawn", "contract.rejected", "contract.withdrawn", "contract.activated", "contract.amendment_proposed", "contract.suspended", "contract.resumed", "contract.terminated", "contract.expired", "contract.corrected", "contract.tombstoned", "representation.granted", "representation.suspended", "representation.revoked", "representation.expired", "commitment.created", "commitment.status_changed", "authority_candidate.created", "authority_candidate.invalidated", "authority_evaluation.recorded"]},
+    "subject_ref": {"type": "string", "minLength": 1},
+    "object_ref": {"type": "string", "minLength": 1},
+    "object_digest": {"$ref": "#/$defs/digest"},
+    "causal_parents": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "claimed_actor_ref": {"type": ["string", "null"]},
+    "representation_grant_ref": {"type": ["string", "null"]},
+    "representation_grant_digest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/digest"}]},
+    "lifecycle_transition_authority_ref": {"type": ["string", "null"]},
+    "lifecycle_transition_authority_digest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/digest"}]},
+    "supersedes_active_head": {"type": ["string", "null"]},
+    "acceptance_set_digest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/digest"}]},
+    "representation_set_digest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/digest"}]},
+    "party_evidence_set_digest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/digest"}]},
+    "activation_policy_digest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/digest"}]},
+    "created_time": {"$ref": "#/$defs/instant"},
+    "local_recorded_at": {"type": "string", "minLength": 1},
+    "correction_of": {"type": ["string", "null"]},
+    "withdraws": {"type": ["string", "null"]},
+    "not_claimed": {
+      "type": "array", "uniqueItems": true, "minItems": 5,
+      "allOf": [
+        {"contains": {"const": "capability_granted"}},
+        {"contains": {"const": "economic_compensation"}},
+        {"contains": {"const": "global_causal_order"}},
+        {"contains": {"const": "provider_execution"}},
+        {"contains": {"const": "resident_identity_continuity"}}
+      ],
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"event_kind": {"const": "contract.activated"}}},
+      "then": {"properties": {"acceptance_set_digest": {"$ref": "#/$defs/digest"}, "representation_set_digest": {"$ref": "#/$defs/digest"}, "party_evidence_set_digest": {"$ref": "#/$defs/digest"}, "activation_policy_digest": {"$ref": "#/$defs/digest"}}},
+      "else": {"properties": {"acceptance_set_digest": {"type": "null"}, "representation_set_digest": {"type": "null"}, "party_evidence_set_digest": {"type": "null"}, "activation_policy_digest": {"type": "null"}}}
+    },
+    {
+      "if": {"required": ["representation_grant_ref"], "properties": {"representation_grant_ref": {"type": "string"}}},
+      "then": {"properties": {"representation_grant_digest": {"$ref": "#/$defs/digest"}}},
+      "else": {"properties": {"representation_grant_digest": {"type": "null"}}}
+    },
+    {
+      "if": {"required": ["lifecycle_transition_authority_ref"], "properties": {"lifecycle_transition_authority_ref": {"type": "string"}}},
+      "then": {"properties": {"lifecycle_transition_authority_digest": {"$ref": "#/$defs/digest"}}},
+      "else": {"properties": {"lifecycle_transition_authority_digest": {"type": "null"}}}
+    }
+  ],
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"},
+    "instant": {
+      "type": "object", "additionalProperties": false,
+      "required": ["instant_ref", "clock_profile_id", "normalized_unix_ns", "uncertainty_ns", "verification_status", "source_evidence_refs"],
+      "properties": {
+        "instant_ref": {"type": "string", "minLength": 1}, "clock_profile_id": {"type": "string", "minLength": 1},
+        "normalized_unix_ns": {"type": "string", "pattern": "^(?:0|-?[1-9][0-9]*)$"}, "uncertainty_ns": {"type": "integer", "minimum": 0},
+        "verification_status": {"enum": ["verified", "observed", "unmeasured", "rejected"]},
+        "source_evidence_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}

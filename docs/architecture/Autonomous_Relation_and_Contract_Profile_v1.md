@@ -668,6 +668,10 @@ Every authority-required lifecycle event carries both
 authority evidence bytes/digest before applying the transition. Reusing one ref
 with changed content fails closed.
 
+Every represented lifecycle event likewise carries both
+`representation_grant_ref` and `representation_grant_digest`; the pair is
+verified against exact grant bytes before the event can affect projection.
+
 ### 6.3 Termination semantics
 
 Termination, expiry, or representation revocation immediately invalidates all

@@ -609,7 +609,8 @@ Required event core:
 EVENT_FIELDS = {
     "schema", "event_id", "event_kind", "subject_ref", "object_ref",
     "object_digest", "causal_parents", "claimed_actor_ref",
-    "representation_grant_ref", "lifecycle_transition_authority_ref",
+    "representation_grant_ref", "representation_grant_digest",
+    "lifecycle_transition_authority_ref",
     "lifecycle_transition_authority_digest",
     "supersedes_active_head", "acceptance_set_digest",
     "representation_set_digest", "party_evidence_set_digest",

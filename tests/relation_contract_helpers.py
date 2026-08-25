@@ -63,10 +63,10 @@ def valid_activation_policy(**overrides):
     return mutate_and_rebind(value, overrides)
 
 
-def valid_party_pin(**overrides):
+def valid_party_pin(party="a", **overrides):
     value = {
         "schema": "arcp/party-evidence-pin/0.1",
-        "party_ref": "resident:fixture:a",
+        "party_ref": f"resident:fixture:{party}",
         "party_kind": "resident",
         "resolver_profile_id": "sedb-ral-public-view:v0.2",
         "resolver_schema_id": "schema:limen-ral-view:v0.2",
@@ -75,7 +75,7 @@ def valid_party_pin(**overrides):
         "state_view_digest": "sha256:" + "2" * 64,
         "state_head_ref": "ral-head:fixture:1",
         "party_status": "active",
-        "binding_ref": "binding:fixture:a:1",
+        "binding_ref": f"binding:fixture:{party}:1",
         "binding_status": "active",
         "binding_ambiguity": False,
         "adapter_verification_status": "verified",
@@ -212,12 +212,12 @@ def valid_contract_version(**overrides):
     return mutate_and_rebind(value, overrides)
 
 
-def valid_grant_authority_evidence(**overrides):
+def valid_grant_authority_evidence(party="a", **overrides):
     value = {
         "schema": "arcp/grant-authority-evidence/0.1",
-        "grant_authority_evidence_id": "grant-authority-evidence:fixture:a",
-        "grantor_party_ref": "resident:fixture:a",
-        "authority_source_ref": "authority-root:fixture:a",
+        "grant_authority_evidence_id": f"grant-authority-evidence:fixture:{party}",
+        "grantor_party_ref": f"resident:fixture:{party}",
+        "authority_source_ref": f"authority-root:fixture:{party}",
         "resolver_profile_id": "authority-resolver:fixture:v1",
         "permitted_lifecycle_actions": ["contract.proposed", "contract.party_accepted"],
         "permitted_contract_scope": ["contract:fixture:collaboration"],
@@ -229,12 +229,12 @@ def valid_grant_authority_evidence(**overrides):
     return mutate_and_rebind(value, overrides)
 
 
-def valid_representation_grant(**overrides):
+def valid_representation_grant(party="a", **overrides):
     value = {
         "schema": "arcp/representation-grant/0.1",
-        "representation_grant_id": "representation-grant:fixture:a:1",
-        "principal_party_ref": "resident:fixture:a",
-        "representative_ref": "instance:fixture:a:1",
+        "representation_grant_id": f"representation-grant:fixture:{party}:1",
+        "principal_party_ref": f"resident:fixture:{party}",
+        "representative_ref": f"instance:fixture:{party}:1",
         "representative_kind": "instance",
         "allowed_lifecycle_actions": ["contract.proposed", "contract.party_accepted"],
         "contract_scope": ["contract:fixture:collaboration"],
@@ -244,15 +244,15 @@ def valid_representation_grant(**overrides):
         "issued_at": normalized_instant("950", 0),
         "revocable": True,
         "redelegable": False,
-        "grant_authority_ref": "grant-authority-evidence:fixture:a",
-        "acceptance_evidence_refs": ["evidence:representation:accepted:a"],
-        "party_evidence_pin_refs": ["party-evidence-pin:fixture:a:1"],
+        "grant_authority_ref": f"grant-authority-evidence:fixture:{party}",
+        "acceptance_evidence_refs": [f"evidence:representation:accepted:{party}"],
+        "party_evidence_pin_refs": [f"party-evidence-pin:fixture:{party}:1"],
         "content_digest": "",
     }
     return mutate_and_rebind(value, overrides)
 
 
-def valid_party_acceptance(**overrides):
+def valid_party_acceptance(party="a", **overrides):
     target_kind = overrides.get("target_kind", "contract")
     target_id = (
         "relation:fixture:collaboration"
@@ -266,21 +266,140 @@ def valid_party_acceptance(**overrides):
     )
     value = {
         "schema": "arcp/party-acceptance/0.1",
-        "acceptance_id": f"acceptance:fixture:a:{target_kind}:v1",
-        "party_ref": "resident:fixture:a",
+        "acceptance_id": f"acceptance:fixture:{party}:{target_kind}:v1",
+        "party_ref": f"resident:fixture:{party}",
         "target_kind": target_kind,
         "target_id": target_id,
         "target_version": 1,
         "target_digest": target_digest,
-        "representation_grant_ref": "representation-grant:fixture:a:1",
-        "representation_grant_digest": valid_representation_grant()["content_digest"],
-        "party_evidence_pin_refs": ["party-evidence-pin:fixture:a:1"],
-        "acceptance_evidence_refs": ["evidence:acceptance:a:1"],
-        "acceptance_evidence_root_refs": ["evidence-root:acceptance:a"],
+        "representation_grant_ref": f"representation-grant:fixture:{party}:1",
+        "representation_grant_digest": valid_representation_grant(party)["content_digest"],
+        "party_evidence_pin_refs": [f"party-evidence-pin:fixture:{party}:1"],
+        "acceptance_evidence_refs": [f"evidence:acceptance:{party}:1"],
+        "acceptance_evidence_root_refs": [f"evidence-root:acceptance:{party}"],
         "accepted_at": normalized_instant("1100", 0),
         "content_digest": "",
     }
     return mutate_and_rebind(value, overrides)
+
+
+EVENT_NONCLAIMS = [
+    "capability_granted",
+    "economic_compensation",
+    "global_causal_order",
+    "provider_execution",
+    "resident_identity_continuity",
+]
+
+AUTHORITY_REQUIRED_EVENT_KINDS = {
+    "relation.proposed",
+    "relation.withdrawn",
+    "relation.superseded",
+    "contract.proposed",
+    "contract.withdrawn",
+    "contract.activated",
+    "contract.amendment_proposed",
+    "contract.suspended",
+    "contract.resumed",
+    "contract.terminated",
+    "contract.corrected",
+    "contract.tombstoned",
+    "representation.granted",
+    "representation.suspended",
+    "representation.revoked",
+}
+
+
+def object_ref(value):
+    for field in (
+        "relation_id",
+        "contract_id",
+        "acceptance_id",
+        "representation_grant_id",
+        "commitment_id",
+        "candidate_id",
+        "receipt_id",
+    ):
+        if field in value:
+            return value[field]
+    raise KeyError("fixture object has no reference field")
+
+
+def generic_profile_object(schema, id_field, identifier, **overrides):
+    value = {
+        "schema": schema,
+        id_field: identifier,
+        "content_digest": "",
+    }
+    return mutate_and_rebind(value, overrides)
+
+
+def valid_relation_contract_event(
+    event_kind,
+    object_value,
+    *,
+    event_id,
+    subject_ref=None,
+    parents=(),
+    authority=None,
+    representation_grant=None,
+    supersedes_active_head=None,
+    **overrides,
+):
+    if authority is None and event_kind in AUTHORITY_REQUIRED_EVENT_KINDS:
+        authority = valid_grant_authority_evidence()
+    activation = event_kind == "contract.activated"
+    value = {
+        "schema": "arcp/relation-contract-event/0.1",
+        "event_id": event_id,
+        "event_kind": event_kind,
+        "subject_ref": subject_ref or object_ref(object_value),
+        "object_ref": object_ref(object_value),
+        "object_digest": object_value["content_digest"],
+        "causal_parents": list(parents),
+        "claimed_actor_ref": "actor:fixture:a",
+        "representation_grant_ref": (
+            None
+            if representation_grant is None
+            else representation_grant["representation_grant_id"]
+        ),
+        "representation_grant_digest": (
+            None if representation_grant is None else representation_grant["content_digest"]
+        ),
+        "lifecycle_transition_authority_ref": (
+            None if authority is None else authority["grant_authority_evidence_id"]
+        ),
+        "lifecycle_transition_authority_digest": (
+            None if authority is None else authority["content_digest"]
+        ),
+        "supersedes_active_head": supersedes_active_head,
+        "acceptance_set_digest": (
+            independent_profile_digest({"set": "acceptance"}) if activation else None
+        ),
+        "representation_set_digest": (
+            independent_profile_digest({"set": "representation"}) if activation else None
+        ),
+        "party_evidence_set_digest": (
+            independent_profile_digest({"set": "party-evidence"}) if activation else None
+        ),
+        "activation_policy_digest": (
+            valid_activation_policy()["content_digest"] if activation else None
+        ),
+        "created_time": normalized_instant("1200", 0),
+        "local_recorded_at": "2026-08-26T01:00:00Z",
+        "correction_of": None,
+        "withdraws": None,
+        "not_claimed": list(EVENT_NONCLAIMS),
+    }
+    value.update(deepcopy(overrides))
+    return value
+
+
+def fixture_objects(*values):
+    result = {}
+    for value in values:
+        result[value["content_digest"]] = deepcopy(value)
+    return result
 
 
 @contextmanager
