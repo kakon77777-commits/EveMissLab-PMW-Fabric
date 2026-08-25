@@ -35,3 +35,4 @@ jobs:
           eml-pmw --help
           eml-bridge --help
           eml-wake --help
+          eml-handoff --help

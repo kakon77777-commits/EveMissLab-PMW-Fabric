@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
+import threading
 from unittest import mock
 import unittest
 
@@ -14,6 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from eml_handoff.errors import HandoffError
 from eml_handoff.filesystem import read_source_payload
 from eml_handoff.models import HandoffConfig, HandoffEnvelope
+import eml_handoff.store as store_module
 from eml_handoff.store import HandoffStore, handoff_key
 from tests.test_handoff_contracts import valid_config, valid_envelope
 
@@ -65,6 +70,32 @@ class HandoffStoreTests(unittest.TestCase):
         self.assertEqual(len(list(self.store.envelopes_dir.glob("*.json"))), 1)
         self.assertEqual(len(list(self.store.duplicates_dir.rglob("*.json"))), 1)
 
+    def test_simultaneous_same_core_submissions_are_created_once_and_deduplicated(self):
+        second = HandoffEnvelope.from_dict(
+            {**self.envelope.to_dict(), "delivery_id": "delivery:test:002"}
+        )
+        real_publish_bytes = store_module._publish_bytes
+        payload_race = threading.Barrier(2)
+
+        def synchronized_payload_publish(path, data):
+            payload_race.wait(timeout=5)
+            return real_publish_bytes(path, data)
+
+        with mock.patch(
+            "eml_handoff.store._publish_bytes",
+            side_effect=synchronized_payload_publish,
+        ):
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                futures = [
+                    executor.submit(self.store.submit, envelope, self.snapshot)
+                    for envelope in (self.envelope, second)
+                ]
+                kinds = sorted(future.result(timeout=10).kind for future in futures)
+
+        self.assertEqual(kinds, ["created", "duplicate"])
+        self.assertEqual(len(list(self.store.envelopes_dir.glob("*.json"))), 1)
+        self.assertEqual(len(list(self.store.duplicates_dir.rglob("*.json"))), 1)
+
     def test_same_id_different_core_is_quarantined_without_payload_text(self):
         self.store.submit(self.envelope, self.snapshot)
         collision = HandoffEnvelope.from_dict(
@@ -98,6 +129,21 @@ class HandoffStoreTests(unittest.TestCase):
             read_source_payload(self.payload, tiny)
         self.assertEqual(caught.exception.code, "payload_too_large")
 
+    def test_allowed_text_extensions_reject_binary_content(self):
+        cases = {
+            "invalid-utf8.txt": b"\x00\xff",
+            "nul-control.md": b"valid prefix\x00hidden suffix\n",
+        }
+        for name, data in cases.items():
+            with self.subTest(name=name):
+                path = self.source_root / name
+                path.write_bytes(data)
+                with self.assertRaises(HandoffError) as caught:
+                    read_source_payload(path, self.config)
+                self.assertEqual(caught.exception.code, "payload_binary_unsupported")
+
+        self.assertEqual(read_source_payload(self.payload, self.config).data, b"hello handoff\n")
+
     def test_envelope_digest_size_media_and_ref_must_match_snapshot(self):
         mutations = (
             (replace(self.envelope, payload_sha256="B" * 64), "payload_integrity_failed"),
@@ -118,6 +164,47 @@ class HandoffStoreTests(unittest.TestCase):
         ):
             with self.assertRaises(HandoffError) as caught:
                 read_source_payload(self.payload, self.config)
+        self.assertEqual(caught.exception.code, "payload_reparse_refused")
+
+    def test_real_symlink_or_junction_root_is_rejected_before_resolution(self):
+        real_root = self.base / "real-source"
+        real_root.mkdir()
+        real_payload = real_root / "message.md"
+        real_payload.write_text("linked payload\n", encoding="utf-8")
+        linked_root = self.base / "linked-source"
+        try:
+            os.symlink(real_root, linked_root, target_is_directory=True)
+        except OSError as error:
+            if os.name != "nt":
+                self.skipTest(f"symlink creation unavailable: {error}")
+            result = subprocess.run(
+                ["cmd", "/c", "mklink", "/J", str(linked_root), str(real_root)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if result.returncode != 0:
+                self.skipTest(f"junction creation unavailable: {result.stderr}")
+        try:
+            linked_payload = linked_root / "message.md"
+            config = HandoffConfig.from_dict(
+                {**valid_config(), "allowed_source_roots": [str(linked_root)]}
+            )
+            with self.assertRaises(HandoffError) as caught:
+                read_source_payload(linked_payload, config)
+            self.assertEqual(caught.exception.code, "payload_reparse_refused")
+        finally:
+            if linked_root.exists():
+                os.rmdir(linked_root)
+
+    def test_real_in_root_symlink_is_rejected_before_resolution(self):
+        in_root_link = self.source_root / "linked-message.md"
+        try:
+            os.symlink(self.payload, in_root_link)
+        except OSError as error:
+            self.skipTest(f"file symlink creation unavailable: {error}")
+        with self.assertRaises(HandoffError) as caught:
+            read_source_payload(in_root_link, self.config)
         self.assertEqual(caught.exception.code, "payload_reparse_refused")
 
     def test_envelope_publish_failure_leaves_only_orphan_payload_and_retry_succeeds(self):

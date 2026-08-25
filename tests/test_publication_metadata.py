@@ -81,6 +81,7 @@ class PublicationMetadataTests(unittest.TestCase):
         self.assertIn("python -m unittest discover -s tests", workflow)
         self.assertIn("python -m compileall -q src", workflow)
         self.assertIn("python -m build --wheel", workflow)
+        self.assertIn("eml-handoff --help", workflow)
         self.assertNotIn("EML_WAKE_LIVE", workflow)
         self.assertNotIn("secrets.", workflow)
 

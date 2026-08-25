@@ -178,46 +178,63 @@ class HandoffStore:
         if not path.exists():
             _publish_json(path, record)
 
+    def _classify_existing_submission(
+        self,
+        envelope: HandoffEnvelope,
+        snapshot: PayloadSnapshot,
+        *,
+        envelope_path: Path,
+        payload_path: Path,
+    ) -> SubmissionResult:
+        existing = self.get_envelope(envelope.handoff_id)
+        if existing.core_digest != envelope.core_digest:
+            self._quarantine_collision(existing, envelope)
+            raise HandoffError(
+                "handoff_content_collision",
+                "same handoff_id was submitted with different core content",
+                details={
+                    "existing": existing.core_digest,
+                    "submitted": envelope.core_digest,
+                },
+            )
+        if not payload_path.is_file() or payload_path.read_bytes() != snapshot.data:
+            raise HandoffError(
+                "payload_integrity_failed", "stored payload does not match duplicate"
+            )
+        duplicate_path = self.duplicate_path(envelope.handoff_id, envelope.delivery_id)
+        record = {
+            "schema_version": "eml-handoff/duplicate-0.1",
+            "handoff_id": envelope.handoff_id,
+            "delivery_id": envelope.delivery_id,
+            "envelope_core_digest": envelope.core_digest,
+            "observed_at": _now_iso(),
+        }
+        if not duplicate_path.exists():
+            try:
+                _publish_json(duplicate_path, record)
+            except HandoffError as error:
+                if error.code != "immutable_file_exists":
+                    raise
+        return SubmissionResult(
+            "duplicate",
+            envelope.handoff_id,
+            envelope.delivery_id,
+            str(envelope_path),
+            str(payload_path),
+            str(duplicate_path),
+        )
+
     def submit(
         self, envelope: HandoffEnvelope, snapshot: PayloadSnapshot
     ) -> SubmissionResult:
         payload_path = self._verify_submission(envelope, snapshot)
         envelope_path = self.envelope_path(envelope.handoff_id)
         if envelope_path.exists():
-            existing = self.get_envelope(envelope.handoff_id)
-            if existing.core_digest != envelope.core_digest:
-                self._quarantine_collision(existing, envelope)
-                raise HandoffError(
-                    "handoff_content_collision",
-                    "same handoff_id was submitted with different core content",
-                    details={
-                        "existing": existing.core_digest,
-                        "submitted": envelope.core_digest,
-                    },
-                )
-            if not payload_path.is_file() or payload_path.read_bytes() != snapshot.data:
-                raise HandoffError(
-                    "payload_integrity_failed", "stored payload does not match duplicate"
-                )
-            duplicate_path = self.duplicate_path(
-                envelope.handoff_id, envelope.delivery_id
-            )
-            record = {
-                "schema_version": "eml-handoff/duplicate-0.1",
-                "handoff_id": envelope.handoff_id,
-                "delivery_id": envelope.delivery_id,
-                "envelope_core_digest": envelope.core_digest,
-                "observed_at": _now_iso(),
-            }
-            if not duplicate_path.exists():
-                _publish_json(duplicate_path, record)
-            return SubmissionResult(
-                "duplicate",
-                envelope.handoff_id,
-                envelope.delivery_id,
-                str(envelope_path),
-                str(payload_path),
-                str(duplicate_path),
+            return self._classify_existing_submission(
+                envelope,
+                snapshot,
+                envelope_path=envelope_path,
+                payload_path=payload_path,
             )
 
         if payload_path.exists():
@@ -226,8 +243,27 @@ class HandoffStore:
                     "payload_integrity_failed", "orphan payload has different bytes"
                 )
         else:
-            _publish_bytes(payload_path, snapshot.data)
-        _publish_json(envelope_path, envelope.to_dict())
+            try:
+                _publish_bytes(payload_path, snapshot.data)
+            except HandoffError as error:
+                if error.code != "immutable_file_exists":
+                    raise
+                if not payload_path.is_file() or payload_path.read_bytes() != snapshot.data:
+                    raise HandoffError(
+                        "payload_integrity_failed",
+                        "concurrent payload publication has different bytes",
+                    ) from error
+        try:
+            _publish_json(envelope_path, envelope.to_dict())
+        except HandoffError as error:
+            if error.code != "immutable_file_exists":
+                raise
+            return self._classify_existing_submission(
+                envelope,
+                snapshot,
+                envelope_path=envelope_path,
+                payload_path=payload_path,
+            )
         return SubmissionResult(
             "created",
             envelope.handoff_id,
@@ -339,12 +375,9 @@ class HandoffStore:
         evidence_refs: list[str],
         recorded_time_ref: str | None,
     ) -> ReceiptRecord:
-        envelope = self.get_envelope(handoff_id)
-        materialization = self._get_materialization(handoff_id)
-        if materialization.receiver_instance_ref != receiver_instance_ref:
-            raise HandoffError(
-                "receiver_instance_mismatch", "materialization and receipt differ"
-            )
+        envelope, materialization = self.preflight_receipt(
+            handoff_id, receiver_instance_ref=receiver_instance_ref
+        )
         if response_handoff_id is not None:
             try:
                 response = self.get_envelope(response_handoff_id)
@@ -378,6 +411,19 @@ class HandoffStore:
         )
         _publish_json(self.receipt_path(handoff_id), record.to_dict())
         return record
+
+    def preflight_receipt(
+        self, handoff_id: str, *, receiver_instance_ref: str | None
+    ) -> tuple[HandoffEnvelope, MaterializationRecord]:
+        envelope = self.get_envelope(handoff_id)
+        if self.receipt_path(handoff_id).is_file():
+            raise HandoffError("handoff_already_acknowledged", handoff_id)
+        materialization = self._get_materialization(handoff_id)
+        if materialization.receiver_instance_ref != receiver_instance_ref:
+            raise HandoffError(
+                "receiver_instance_mismatch", "materialization and receipt differ"
+            )
+        return envelope, materialization
 
     def record_notification(
         self,

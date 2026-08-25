@@ -188,6 +188,20 @@ class HandoffContractTests(unittest.TestCase):
                     )
                 self.assertEqual(caught.exception.code, "payload_limit_invalid")
 
+    def test_ctcl_endpoint_requires_well_formed_https_url(self):
+        for endpoint in (
+            "http://commoninstant.org/v1/instants",
+            "file:///tmp/instants",
+            "https://",
+            "not-a-url",
+        ):
+            with self.subTest(endpoint=endpoint):
+                with self.assertRaises(HandoffError) as caught:
+                    HandoffConfig.from_dict(
+                        {**valid_config(), "ctcl_endpoint": endpoint}
+                    )
+                self.assertEqual(caught.exception.code, "ctcl_endpoint_invalid")
+
 
 if __name__ == "__main__":
     unittest.main()

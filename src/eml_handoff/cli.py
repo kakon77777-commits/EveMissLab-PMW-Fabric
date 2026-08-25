@@ -310,6 +310,9 @@ def main(
             )
             return 0
         if args.command == "reply":
+            store.preflight_receipt(
+                args.handoff_id, receiver_instance_ref=args.receiver_instance
+            )
             _, envelope, request_time = _create(
                 store=store,
                 config=config,

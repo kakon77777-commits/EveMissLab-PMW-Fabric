@@ -230,6 +230,65 @@ class HandoffCliTests(unittest.TestCase):
         )
         self.assertEqual(self.run_cli("status", handoff_id)[1]["status"], "acknowledged")
 
+    def test_reply_to_acknowledged_handoff_creates_no_orphan_response(self):
+        _, created, _ = self.create_pending()
+        handoff_id = created["handoff_id"]
+        self.run_cli(
+            "claim",
+            handoff_id,
+            "--receiver-instance",
+            "thread:current",
+            "--binding-kind",
+            "codex_thread",
+            "--authority",
+            "principal:neo.k/cross-dialogue",
+            "--evidence",
+            "host:exact-turn",
+        )
+        self.run_cli(
+            "materialize", handoff_id, "--receiver-instance", "thread:current"
+        )
+        self.run_cli(
+            "ack",
+            handoff_id,
+            "--receiver-instance",
+            "thread:current",
+            "--decision",
+            "ACK",
+            "--evidence",
+            "host:exact-turn",
+            temporal=self.unavailable_temporal(),
+        )
+        before = set((self.root / "envelopes").glob("*.json"))
+        reply_payload = self.source / "late-reply.md"
+        reply_payload.write_text("must not be committed\n", encoding="utf-8")
+
+        code, value, _ = self.run_cli(
+            "reply",
+            handoff_id,
+            "--payload",
+            str(reply_payload),
+            "--sender",
+            "claim:receiver",
+            "--sender-instance",
+            "thread:current",
+            "--target-kind",
+            "task",
+            "--target-ref",
+            "task:test",
+            "--authority",
+            "principal:neo.k/cross-dialogue",
+            "--receiver-instance",
+            "thread:current",
+            "--evidence",
+            "host:exact-turn",
+            temporal=FakeTemporalProvider(),
+        )
+
+        self.assertEqual(code, 2)
+        self.assertEqual(value["error"]["code"], "handoff_already_acknowledged")
+        self.assertEqual(set((self.root / "envelopes").glob("*.json")), before)
+
     def test_malformed_and_duplicate_key_config_are_typed_input_errors(self):
         self.config.write_text("{not-json", encoding="utf-8")
         code, value, _ = self.run_cli("status", "handoff:none")

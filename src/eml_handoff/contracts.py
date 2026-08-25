@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import PurePosixPath
 import re
 from typing import Any
+from urllib.parse import urlsplit
 
 from .errors import HandoffError
 
@@ -172,6 +173,11 @@ def validate_config_dict(value: dict[str, Any]) -> dict[str, Any]:
     if not 0 < default <= hard <= 4_194_304:
         raise HandoffError("payload_limit_invalid", "config")
     _text(out["ctcl_endpoint"], "ctcl_endpoint")
+    endpoint = urlsplit(out["ctcl_endpoint"])
+    if endpoint.scheme != "https" or not endpoint.netloc:
+        raise HandoffError(
+            "ctcl_endpoint_invalid", "ctcl_endpoint must be a well-formed HTTPS URL"
+        )
     if not isinstance(out["strict_reparse_checks"], bool):
         raise HandoffError("field_type_invalid", "strict_reparse_checks")
     return out
