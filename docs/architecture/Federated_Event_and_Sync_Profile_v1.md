@@ -1,6 +1,6 @@
 # Federated Event and Sync Profile v1
 
-**Status:** Neo.K-approved written specification; implementation planning authorized
+**Status:** Neo.K-approved written specification; J0 joint ownership seam approved; Wave 1 implementation authorized
 **Date:** 2026-08-25  
 **Project:** EveMissLab PMW Fabric  
 **Parent architecture:** `ARCP_Centered_Federated_Shared_World_Architecture_v0.1.md`  
@@ -38,6 +38,27 @@ The profile consumes, but does not replace:
 - Wake as an optional fresh-worker activation adapter;
 - CTCL registered anchors as time evidence, not authorship or causal proof;
 - MRMIC Phase 13 as a visual projection consumer, not the event authority.
+
+### 2.1 J0 joint ownership seam
+
+SEDB-RAL remains the sole canonical owner of registry facts, registry-effective
+authority state, admission decisions, the registry ledger/head, production root,
+checkpoint/recovery semantics, and public-disclosure decisions. PMW Fabric is
+the sole canonical owner of portable carrier events, realm/replica mechanics,
+adapter visibility, delivery/materialization observations, receiver adoption,
+and cross-realm reconciliation records.
+
+The seam is versioned and digest-pinned:
+
+```text
+RAL-owned public projection bytes and schema
+→ Fabric-owned adapter profile pinned by $id/version/source commit/SHA-256
+→ Fabric event and receiver observation
+```
+
+Fabric never vendors a second canonical RAL schema, activates a RAL authority,
+or rewrites a RAL head. SEDB-RAL may consume Fabric evidence through a small
+digest-pinned integration fixture without absorbing the Fabric event schema.
 
 ## 3. Core invariants
 
@@ -325,6 +346,51 @@ inventory/fetch operations only; notification and activation remain separate
 ports. Windows, cloud, HDUS, and embodied adapters must pass the same portable
 contract suite.
 
+### 16.1 Adapter visibility evidence
+
+An adapter read is a projection over host state, not the host state itself.
+Version 1 therefore records `pmw.adapter-visibility-evidence/0.1` separately
+from delivery and adoption. It distinguishes at least:
+
+```text
+execution_state        completed | incomplete | unmeasured
+adapter_read_outcome   body_available | metadata_only | empty_projection |
+                       read_failed | unmeasured
+local_capture_state    body_observed | metadata_only | not_observed | unmeasured
+materialization_state  verified | present_unverified | absent | unmeasured
+portable_delivery_state acknowledged_structured | materialized | uncertain |
+                        not_proven
+authorship_state       receiver_observed | claimed | unmeasured
+```
+
+Required inference barriers are:
+
+```text
+turn_completed_does_not_imply_adapter_body_available
+empty_projection_does_not_imply_no_response
+local_capture_does_not_prove_portable_delivery
+materialized_handoff_does_not_prove_original_adapter_delivery
+delivery_or_materialization_does_not_prove_authorship_or_identity
+no_automatic_resend_from_empty_projection
+```
+
+The motivating fixture is the exact Codex task incident where a completed turn
+was returned twice with `items=[]`, while an exact local transcript contained an
+assistant message and a digest-verified durable handoff existed. The correct
+classification is `completed + empty_projection + body_observed(local_only) +
+materialization verified + portable delivery not_proven + authorship unmeasured`.
+The empty projection never authorizes automatic replay.
+
+### 16.2 RAL public-projection adapter
+
+The Fabric-owned RAL adapter manifest records the RAL schema `$id`, semantic
+version, source commit, byte length, and SHA-256 plus explicit subject,
+sensitivity, correction, and tombstone mappings. RAL owns `ral_disclosure_class`;
+Fabric owns `fabric_payload_class` and realm-qualified carrier subjects. A
+receiver adoption receipt records the receiver decision and evidence but has no
+field that can mutate a RAL head, activate authority, or commit a registry
+operation.
+
 ## 17. CLI surface
 
 The first implementation exposes deterministic JSON commands:
@@ -411,6 +477,10 @@ Subproject 2 is complete only when:
 10. portability and credential scans remain green;
 11. FCAO uses at most one Twin review seat for the final candidate;
 12. merge requires GitHub matrix CI and a post-merge clean clone.
+13. adapter visibility RED/GREEN fixtures prove completed-turn, body visibility,
+    durable materialization, portable delivery, and authorship remain distinct;
+14. the RAL seam verifies an exact external schema pin and rejects a changed
+    digest before parsing or event creation.
 
 ## 21. Deferred work
 
@@ -431,3 +501,10 @@ implementation plan for this profile. Implementation uses one primary executor
 and at most one FCAO Twin for necessary final checking; it does not use per-task
 rotating reviewers. The implementation plan does not itself authorize push,
 merge, deployment, provider calls, or expansion into later subprojects.
+
+Neo.K subsequently approved the J0 joint ownership matrix, digest-pinned schema
+seam, and adapter-visibility incident contract. That approval authorizes scoped
+Wave 1 implementation, tests, commits, and routine branch push. Merge,
+production registry layout mutation, a real applicant, live federation,
+Herdr/Claude activation, private Residence access, and cloud/off-site replication
+remain separate action-time gates.
