@@ -27,6 +27,10 @@ Implemented in the initial public repository:
 - **ARCP–PMW–MRMIC Integration Profile v1**: exact MRMIC Phase 13 schema locks,
   ARCP-aware reference separation, fail-closed capability negotiation, native
   resource-portal mapping, and deterministic offline conformance validation.
+- **Federated Event and Sync Profile v1**: immutable P0/P1 event envelopes,
+  realm/replica inventories, causal-DAG validation, receiver observations,
+  explicit conflict branches and resolutions, deterministic JSON/SQLite views,
+  adapter-visibility evidence, and a digest-pinned SEDB-RAL public seam.
 
 ## 2. Canvas integration
 

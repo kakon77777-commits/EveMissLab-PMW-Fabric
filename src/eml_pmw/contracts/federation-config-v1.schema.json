@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/pmw-federation-config-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "local_realm_id", "local_replica_id", "allowed_source_roots", "allowed_event_kinds", "authority_required_event_kinds", "allowed_authority_refs", "default_max_payload_bytes", "hard_max_payload_bytes", "strict_reparse_checks"],
+  "properties": {
+    "schema": {"const": "pmw-federation-config/v1"},
+    "local_realm_id": {"type": "string", "minLength": 1},
+    "local_replica_id": {"type": "string", "minLength": 1},
+    "allowed_source_roots": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "allowed_event_kinds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "authority_required_event_kinds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "allowed_authority_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "default_max_payload_bytes": {"type": "integer", "minimum": 1, "maximum": 4194304},
+    "hard_max_payload_bytes": {"type": "integer", "minimum": 1, "maximum": 4194304},
+    "strict_reparse_checks": {"type": "boolean"}
+  }
+}

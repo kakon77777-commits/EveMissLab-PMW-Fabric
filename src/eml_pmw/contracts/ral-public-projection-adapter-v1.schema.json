@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/pmw/ral-public-projection-adapter-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "adapter_profile_id", "source_manifest_schema", "source_manifest_digest", "source_schema_id", "source_schema_version", "source_repository", "source_commit", "source_schema_bytes", "source_schema_sha256", "source_profile_ref", "carrier_event_kind", "subject_mapping", "ral_disclosure_class", "fabric_payload_class", "correction_mapping", "tombstone_mapping", "not_claimed", "manifest_digest"],
+  "properties": {
+    "schema": {"const": "pmw.ral-public-projection-adapter/v1"},
+    "adapter_profile_id": {"type": "string", "minLength": 1},
+    "source_manifest_schema": {"const": "sedb-ral.fabric-seam-source-manifest/0.1"},
+    "source_manifest_digest": {"type": "string", "pattern": "^sha256:sedb-ral-json-nfc-codepoint-v1:[0-9a-f]{64}$"},
+    "source_schema_id": {"type": "string", "format": "uri"},
+    "source_schema_version": {"type": "string", "minLength": 1},
+    "source_repository": {"type": "string", "format": "uri"},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_schema_bytes": {"type": "integer", "minimum": 1},
+    "source_schema_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_profile_ref": {"type": "string", "minLength": 1},
+    "carrier_event_kind": {"const": "ral.public_projection.snapshot"},
+    "subject_mapping": {"const": {"source_field": "view_id", "target_template": "ral-public-view:{realm_id}:{view_id}"}},
+    "ral_disclosure_class": {"const": "public"},
+    "fabric_payload_class": {"const": "P0"},
+    "correction_mapping": {"const": "source_semantics_preserved"},
+    "tombstone_mapping": {"const": "source_semantics_preserved"},
+    "not_claimed": {"const": ["ral_schema_vendored", "ral_authority_activated", "ral_head_mutated", "private_access"]},
+    "manifest_digest": {"type": "string", "pattern": "^sha256:pmw-ral-adapter-json-nfc-codepoint-v1:[0-9a-f]{64}$"}
+  }
+}

@@ -7,6 +7,7 @@ from .adapters.herdr_bridge import HerdrBridgeImportAdapter
 from .adapters.mrmic import MRMICHTTPAdapter
 from .demo import run_demo
 from .integration.bundle import validate_bundle
+from .federation.cli import register_subcommands as register_federation_subcommands
 
 def _print(v): print(json.dumps(v,ensure_ascii=False,indent=2,sort_keys=True))
 def _j(args): return FabricJournal(args.db)
@@ -101,6 +102,7 @@ def build_parser():
     x=s.add_parser('show');x.add_argument('what',choices=['agents','bindings','workspaces','resources']);x.add_argument('--workspace');x.set_defaults(func=cmd_show)
     x=s.add_parser('demo');x.add_argument('--demo-dir',default='run/pmw-demo');x.set_defaults(func=cmd_demo)
     x=s.add_parser('profile-validate');x.add_argument('file');x.set_defaults(func=cmd_profile_validate)
+    register_federation_subcommands(s)
     return p
 
 def main(argv=None):

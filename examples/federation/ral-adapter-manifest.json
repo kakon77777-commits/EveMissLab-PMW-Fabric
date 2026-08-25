@@ -1,0 +1,29 @@
+{
+  "adapter_profile_id": "pmw-adapter:sedb-ral:limen-v0.2",
+  "carrier_event_kind": "ral.public_projection.snapshot",
+  "correction_mapping": "source_semantics_preserved",
+  "fabric_payload_class": "P0",
+  "manifest_digest": "sha256:pmw-ral-adapter-json-nfc-codepoint-v1:a6cb74100742c235d8ba9dd4481bd7ff384f852183f6548da3d17e59630d913d",
+  "not_claimed": [
+    "ral_schema_vendored",
+    "ral_authority_activated",
+    "ral_head_mutated",
+    "private_access"
+  ],
+  "ral_disclosure_class": "public",
+  "schema": "pmw.ral-public-projection-adapter/v1",
+  "source_commit": "077606f08576b38e93762d7eb4d8720b36766fc1",
+  "source_manifest_digest": "sha256:sedb-ral-json-nfc-codepoint-v1:f22a06d08c6d3a0c4a0ab60ded7b9696585c8d1cb08f59ff465e80a87b270529",
+  "source_manifest_schema": "sedb-ral.fabric-seam-source-manifest/0.1",
+  "source_profile_ref": "sedb-ral.fabric-seam-source/v0.1",
+  "source_repository": "https://github.com/kakon77777-commits/SEDB-RAL-SEDB-Residency-Attestation-Layer",
+  "source_schema_bytes": 6029,
+  "source_schema_id": "https://evemisslab.com/schemas/limen/ral-view-v0.2.json",
+  "source_schema_sha256": "32aefbb92345538b0320930e237f35791c0c43c5a1f7e40eace5d7248d803373",
+  "source_schema_version": "0.2",
+  "subject_mapping": {
+    "source_field": "view_id",
+    "target_template": "ral-public-view:{realm_id}:{view_id}"
+  },
+  "tombstone_mapping": "source_semantics_preserved"
+}

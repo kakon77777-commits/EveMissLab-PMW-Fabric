@@ -18,8 +18,8 @@ class IntegrationPackagingTests(unittest.TestCase):
             "project"
         ]
         self.assertIn("jsonschema>=4.23,<5", project["dependencies"])
-        self.assertEqual(project["version"], "0.2.0")
-        self.assertEqual(eml_pmw.__version__, "0.2.0")
+        self.assertEqual(project["version"], "0.3.0")
+        self.assertEqual(eml_pmw.__version__, "0.3.0")
 
     def test_package_resources_include_profile_and_all_locked_schemas(self):
         root = files("eml_pmw.contracts")

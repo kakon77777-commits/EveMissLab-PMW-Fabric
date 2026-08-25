@@ -21,6 +21,10 @@ Implemented and tested:
 - ARCP–PMW–MRMIC Integration Profile v1 with exact Phase 13 schema locks,
   typed entity/instance references, fail-closed capability negotiation, native
   resource portals, and an offline conformance CLI.
+- Federated Event and Sync Profile v1 with immutable realm/replica events,
+  inventory-first offline exchange, causal conflict preservation, explicit
+  authority-bound resolution, adapter-visibility evidence, and a digest-pinned
+  SEDB-RAL public-projection seam.
 
 Planned work is tracked in [ROADMAP.md](ROADMAP.md). The canonical design for
 the shared visual world is
@@ -34,6 +38,8 @@ The provider-free file fallback is specified in
 The portable hierarchy from ARCP/AREC existence governance through PMW
 coordination to the MRMIC visual world is defined in
 [docs/architecture/ARCP_Centered_Federated_Shared_World_Architecture_v0.1.md](docs/architecture/ARCP_Centered_Federated_Shared_World_Architecture_v0.1.md).
+The offline federation contract is
+[docs/architecture/Federated_Event_and_Sync_Profile_v1.md](docs/architecture/Federated_Event_and_Sync_Profile_v1.md).
 
 ## Install and verify
 
@@ -62,6 +68,7 @@ PMW Fabric
 ├── ephemeral presence
 ├── decision receipts
 ├── provenance refs
+├── immutable federated events and deterministic reconciliation
 └── adapters
     ├── Herdr Bridge importer
     ├── legacy MRMIC Phase 12 HTTP projection
@@ -118,6 +125,26 @@ ARCP/AREC is the existence and governance root; PMW is the shared-world
 coordination layer; MRMIC owns visual projection. This profile does not issue
 an identity, decide continuity, activate a relation or contract, send a
 message, or turn provider/runtime identifiers into an entity.
+
+## Offline federated events (`eml-pmw`)
+
+Federation v1 is provider-free and inventory-first. Each realm keeps its own
+immutable event replica, exchanges only inventories and requested P0/P1 event
+bytes, and records receiver observations separately from delivery, adoption,
+authority, and authorship.
+
+```text
+event != delivery != observation != adoption != authority
+replica sequence != global sequence
+completed turn != adapter body available
+```
+
+Available commands are `event-create`, `event-inventory`, `event-diff`,
+`event-import`, `event-reconcile`, `conflict-show`, `conflict-resolve`, and
+`sync-status`. Ordinary tests and the two-realm acceptance scenario make no
+network, provider, Wake, Bridge, or CTCL calls. The RAL adapter pins the
+RAL-owned public schema by `$id`, commit, byte count, and SHA-256; it does not
+vendor the schema or mutate a registry head.
 
 ## Same-database composition
 

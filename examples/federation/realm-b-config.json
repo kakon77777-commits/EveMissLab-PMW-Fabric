@@ -1,0 +1,12 @@
+{
+  "allowed_authority_refs": ["authority:fixture"],
+  "allowed_event_kinds": ["pmw.conflict.resolution", "pmw.task.field_set"],
+  "allowed_source_roots": ["examples/federation"],
+  "authority_required_event_kinds": ["pmw.conflict.resolution", "pmw.task.field_set"],
+  "default_max_payload_bytes": 1048576,
+  "hard_max_payload_bytes": 4194304,
+  "local_realm_id": "realm:b",
+  "local_replica_id": "replica:b",
+  "schema": "pmw-federation-config/v1",
+  "strict_reparse_checks": true
+}
