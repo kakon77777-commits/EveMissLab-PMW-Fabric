@@ -9,12 +9,13 @@ description = "Canvas-first PMW Fabric with Herdr and MRMIC provider adapters"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
-dependencies = []
+dependencies = [
+  "jsonschema>=4.23,<5",
+]
 
 [project.optional-dependencies]
 test = [
   "build>=1.2,<2",
-  "jsonschema>=4.23,<5",
   "setuptools>=68",
 ]
 
