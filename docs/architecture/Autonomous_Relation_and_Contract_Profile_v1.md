@@ -465,6 +465,8 @@ Required fields:
 
 ```text
 commitment_id
+version
+parent_version_digest       null only for genesis
 contract_ref
 contract_digest
 obligated_party_ref
@@ -478,7 +480,9 @@ content_digest
 ```
 
 `execution_refs` may remain empty. The existence of a commitment never claims
-that an action was attempted or completed.
+that an action was attempted or completed. Status changes create a new
+CommitmentRecord version and lifecycle event; they never replace the prior
+record in place.
 
 ### 5.7 AuthorityCandidate
 
@@ -657,6 +661,12 @@ Each event names its direct causal parent(s). Missing parents, reordered replica
 sequence, event-ID/content collision, or duplicate sequence with another event
 fails before projection. Exact duplicates are idempotent and recorded as
 duplicate delivery evidence rather than a second state transition.
+
+Every authority-required lifecycle event carries both
+`lifecycle_transition_authority_ref` and
+`lifecycle_transition_authority_digest`. The reducer verifies the exact
+authority evidence bytes/digest before applying the transition. Reusing one ref
+with changed content fails closed.
 
 ### 6.3 Termination semantics
 
@@ -914,6 +924,7 @@ party_binding_ambiguous
 party_binding_inactive
 representation_missing
 representation_authority_circular
+transition_authority_digest_mismatch
 representation_conflict
 representation_scope_mismatch
 representation_expired
