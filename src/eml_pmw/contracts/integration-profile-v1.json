@@ -1,0 +1,24 @@
+{
+  "schema": "pmw-arcp-mrmic-integration-profile/v1",
+  "profileId": "evemisslab:pmw:arcp-mrmic:v1",
+  "arcp": {
+    "sourceCommit": "c47300c961b20eac0878ac8c94df95d0df34e688",
+    "hashBasis": "git_blob_bytes",
+    "idsSha256": "60a4a7991f90254e178010c937ffbf390c1db2e9da8b15c0c3ae104f0a4d0717",
+    "typesSha256": "9119691c4fb24ca9257029c87915302bcbbcff73c153bced32c8d3f76045331d",
+    "entityIdKind": "arcp_agent"
+  },
+  "mrmic": {
+    "sourceCommit": "791efb9d98270d4db9c25f257aac805196ba62e8",
+    "capabilitiesSchema": "mrmic-capabilities/v1",
+    "mrmicVersion": "0.14.0",
+    "canvasSchemaVersion": "mrmic-canvas/0.14",
+    "mcpProtocolVersion": "2025-11-25",
+    "mcpProfile": "stateful-streamable-http-subset",
+    "projectionMode": "native_resource_portal_v1",
+    "authMode": "bearer_principal_v1",
+    "runtimePresenceSchema": "ephemeral_runtime_presence_v1",
+    "livePortalHostState": "live_portal_host_v1"
+  },
+  "economicTerms": null
+}

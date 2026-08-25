@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/pmw-participant-binding-v1.schema.json",
+  "title": "PMW Participant Binding v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "bindingId", "pmwWorkspaceId", "displayLabel", "entityRef", "instanceRef", "providerPrincipalRef"],
+  "properties": {
+    "schema": {"const": "pmw-participant-binding/v1"},
+    "bindingId": {"type": "string", "minLength": 1},
+    "pmwWorkspaceId": {"type": "string", "minLength": 1},
+    "displayLabel": {"type": "string", "minLength": 1},
+    "entityRef": {"$ref": "#/$defs/entityReference"},
+    "instanceRef": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/instanceReference"}]},
+    "providerPrincipalRef": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/providerPrincipalReference"}]}
+  },
+  "$defs": {
+    "evidenceRefs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "entityReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "identifierKind", "issuer", "verificationStatus", "evidenceRefs"],
+      "properties": {
+        "value": {"type": ["string", "null"]},
+        "identifierKind": {"enum": ["arcp_agent", "principal", "unresolved"]},
+        "issuer": {"type": "string", "minLength": 1},
+        "verificationStatus": {"enum": ["verified", "observed", "claimed", "unmeasured", "rejected"]},
+        "evidenceRefs": {"$ref": "#/$defs/evidenceRefs"}
+      },
+      "allOf": [
+        {"if": {"properties": {"identifierKind": {"const": "unresolved"}}}, "then": {"properties": {"value": {"type": "null"}}}, "else": {"properties": {"value": {"type": "string", "minLength": 1}}}},
+        {"if": {"properties": {"verificationStatus": {"enum": ["verified", "observed"]}}}, "then": {"properties": {"evidenceRefs": {"minItems": 1}}}}
+      ]
+    },
+    "instanceReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "identifierKind", "issuer", "verificationStatus", "evidenceRefs"],
+      "properties": {
+        "value": {"type": ["string", "null"]},
+        "identifierKind": {"enum": ["codex_thread", "session_uuid", "provider_session", "unresolved"]},
+        "issuer": {"type": "string", "minLength": 1},
+        "verificationStatus": {"enum": ["verified", "observed", "claimed", "unmeasured", "rejected"]},
+        "evidenceRefs": {"$ref": "#/$defs/evidenceRefs"}
+      },
+      "allOf": [
+        {"if": {"properties": {"identifierKind": {"const": "unresolved"}}}, "then": {"properties": {"value": {"type": "null"}}}, "else": {"properties": {"value": {"type": "string", "minLength": 1}}}},
+        {"if": {"properties": {"verificationStatus": {"enum": ["verified", "observed"]}}}, "then": {"properties": {"evidenceRefs": {"minItems": 1}}}}
+      ]
+    },
+    "providerPrincipalReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "identifierKind", "issuer", "verificationStatus", "evidenceRefs"],
+      "properties": {
+        "value": {"type": ["string", "null"]},
+        "identifierKind": {"enum": ["provider_principal", "unresolved"]},
+        "issuer": {"type": "string", "minLength": 1},
+        "verificationStatus": {"enum": ["verified", "observed", "claimed", "unmeasured", "rejected"]},
+        "evidenceRefs": {"$ref": "#/$defs/evidenceRefs"}
+      },
+      "allOf": [
+        {"if": {"properties": {"identifierKind": {"const": "unresolved"}}}, "then": {"properties": {"value": {"type": "null"}}}, "else": {"properties": {"value": {"type": "string", "minLength": 1}}}},
+        {"if": {"properties": {"verificationStatus": {"enum": ["verified", "observed"]}}}, "then": {"properties": {"evidenceRefs": {"minItems": 1}}}}
+      ]
+    }
+  }
+}

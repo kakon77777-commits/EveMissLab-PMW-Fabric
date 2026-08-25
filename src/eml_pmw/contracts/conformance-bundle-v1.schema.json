@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/pmw-arcp-mrmic-conformance-bundle-v1.schema.json",
+  "title": "ARCP PMW MRMIC Conformance Bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "participantBinding", "mrmicCapabilities", "resourceBinding", "nativePortal"],
+  "properties": {
+    "schema": {"const": "pmw-arcp-mrmic-conformance-bundle/v1"},
+    "participantBinding": {"type": "object"},
+    "mrmicCapabilities": {"type": ["object", "null"]},
+    "resourceBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pmwWorkspaceId", "provider", "resourceKind", "providerResourceId"],
+      "properties": {
+        "pmwWorkspaceId": {"type": "string", "minLength": 1},
+        "provider": {"type": "string", "minLength": 1},
+        "resourceKind": {"type": "string", "minLength": 1},
+        "providerResourceId": {"type": "string", "minLength": 1}
+      }
+    },
+    "nativePortal": {"type": "object"}
+  }
+}

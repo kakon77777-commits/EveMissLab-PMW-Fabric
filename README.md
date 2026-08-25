@@ -18,6 +18,9 @@ Implemented and tested:
   timeout, digest, CTCL, and idempotency boundaries.
 - Local Durable Handoff Mailbox v0.1 with outbox-first P0/P1 documents,
   immutable claims/materializations/receipts, and duplicate-delivery control.
+- ARCP–PMW–MRMIC Integration Profile v1 with exact Phase 13 schema locks,
+  typed entity/instance references, fail-closed capability negotiation, native
+  resource portals, and an offline conformance CLI.
 
 Planned work is tracked in [ROADMAP.md](ROADMAP.md). The canonical design for
 the shared visual world is
@@ -28,6 +31,9 @@ and the portable wake procedure is in
 [docs/operations/WAKE_QUICKSTART.md](docs/operations/WAKE_QUICKSTART.md).
 The provider-free file fallback is specified in
 [docs/architecture/Local_Durable_Handoff_Mailbox_v0.1.md](docs/architecture/Local_Durable_Handoff_Mailbox_v0.1.md).
+The portable hierarchy from ARCP/AREC existence governance through PMW
+coordination to the MRMIC visual world is defined in
+[docs/architecture/ARCP_Centered_Federated_Shared_World_Architecture_v0.1.md](docs/architecture/ARCP_Centered_Federated_Shared_World_Architecture_v0.1.md).
 
 ## Install and verify
 
@@ -58,7 +64,8 @@ PMW Fabric
 ├── provenance refs
 └── adapters
     ├── Herdr Bridge importer
-    ├── MRMIC Phase 12 HTTP projection
+    ├── legacy MRMIC Phase 12 HTTP projection
+    ├── secure MRMIC Phase 13 native-portal projection
     └── deterministic mock visual world
 ```
 
@@ -90,17 +97,27 @@ The demo creates a shared PMW workspace containing:
 
 The demo uses MockHerdr and MockVisual adapters. It proves Fabric state semantics; it does not claim live Tandem/MRMIC execution.
 
-## Current MRMIC compatibility mode
+## MRMIC compatibility profiles
 
-MRMIC Phase 12 currently accepts typed Canvas objects including `frame`, but not `resource_portal`. The live HTTP adapter therefore supports:
+`MRMICHTTPAdapter` preserves the legacy Phase 12 `compat_frame_v0` path. Phase
+12 actor fields remain untrusted payload data, so that adapter still refuses
+live external AI-presence injection.
 
-```text
-compat_frame_v0
+`MRMICPhase13Adapter` is a separate opt-in HTTPS bearer adapter. Before any
+authenticated mutation it retrieves `/api/capabilities`, validates the exact
+vendored Phase 13 contract surface, and fails closed unless
+`native_resource_portal_v1` and `bearer_principal_v1` are both available.
+
+Offline conformance check:
+
+```powershell
+python -m eml_pmw profile-validate examples/integration/profile-v1-positive.json
 ```
 
-This creates an existing `frame` Canvas object whose metadata carries the PMW resource reference. Once Phase 13 adds native `resource_portal`, use `native_resource_portal`.
-
-Live external AI presence is deliberately refused against Phase 12 because the current WebSocket message's actor fields are data, not authenticated identity proof.
+ARCP/AREC is the existence and governance root; PMW is the shared-world
+coordination layer; MRMIC owns visual projection. This profile does not issue
+an identity, decide continuity, activate a relation or contract, send a
+message, or turn provider/runtime identifiers into an entity.
 
 ## Same-database composition
 

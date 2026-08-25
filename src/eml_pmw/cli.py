@@ -6,6 +6,7 @@ from .core import PMWFabric
 from .adapters.herdr_bridge import HerdrBridgeImportAdapter
 from .adapters.mrmic import MRMICHTTPAdapter
 from .demo import run_demo
+from .integration.bundle import validate_bundle
 
 def _print(v): print(json.dumps(v,ensure_ascii=False,indent=2,sort_keys=True))
 def _j(args): return FabricJournal(args.db)
@@ -49,6 +50,42 @@ def cmd_show(a):
     finally:j.close()
 def cmd_demo(a): _print(run_demo(Path(a.demo_dir))); return 0
 
+class _DuplicateKeyError(ValueError):
+    pass
+
+def _profile_pairs(pairs):
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise _DuplicateKeyError(key)
+        value[key] = item
+    return value
+
+def cmd_profile_validate(a):
+    try:
+        text = Path(a.file).read_text(encoding='utf-8', errors='strict')
+    except OSError:
+        _print({'profile':'pmw-arcp-mrmic/v1','status':'error','reason_codes':['input_unreadable']})
+        return 1
+    except UnicodeError:
+        _print({'profile':'pmw-arcp-mrmic/v1','status':'error','reason_codes':['input_invalid_json']})
+        return 1
+    try:
+        value = json.loads(
+            text,
+            object_pairs_hook=_profile_pairs,
+            parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)),
+        )
+    except _DuplicateKeyError:
+        _print({'profile':'pmw-arcp-mrmic/v1','status':'error','reason_codes':['input_duplicate_key']})
+        return 1
+    except (json.JSONDecodeError, ValueError):
+        _print({'profile':'pmw-arcp-mrmic/v1','status':'error','reason_codes':['input_invalid_json']})
+        return 1
+    decision=validate_bundle(value)
+    _print({'profile':'pmw-arcp-mrmic/v1','status':decision.status,'reason_codes':list(decision.reason_codes)})
+    return {'compatible':0,'rejected':2,'incompatible':3,'unmeasured':4}[decision.status]
+
 def build_parser():
     p=argparse.ArgumentParser(prog='eml-pmw',description='EveMissLab Canvas-first PMW Fabric Runtime MVP v0.1')
     root=Path(os.environ.get('EML_PMW_HOME',str(Path.home()/'.evemisslab'/'pmw-fabric')))
@@ -63,6 +100,7 @@ def build_parser():
     x=s.add_parser('project-mrmic');x.add_argument('binding_id');x.add_argument('--url',default='http://127.0.0.1:4173');x.add_argument('--x',type=float,default=100);x.add_argument('--y',type=float,default=100);x.add_argument('--width',type=float,default=600);x.add_argument('--height',type=float,default=400);x.add_argument('--z',type=int,default=20);x.add_argument('--projection-mode',default='compat_frame_v0',choices=['compat_frame_v0','native_resource_portal']);x.set_defaults(func=cmd_project_mrmic)
     x=s.add_parser('show');x.add_argument('what',choices=['agents','bindings','workspaces','resources']);x.add_argument('--workspace');x.set_defaults(func=cmd_show)
     x=s.add_parser('demo');x.add_argument('--demo-dir',default='run/pmw-demo');x.set_defaults(func=cmd_demo)
+    x=s.add_parser('profile-validate');x.add_argument('file');x.set_defaults(func=cmd_profile_validate)
     return p
 
 def main(argv=None):

@@ -1,0 +1,44 @@
+{
+  "schema": "pmw-arcp-mrmic-conformance-bundle/v1",
+  "participantBinding": {
+    "schema": "pmw-participant-binding/v1",
+    "bindingId": "participant:fixture-agent",
+    "pmwWorkspaceId": "pmw-workspace-1",
+    "displayLabel": "Example Agent",
+    "entityRef": {
+      "value": "arcp:agent:example:11111111-1111-4111-8111-111111111111",
+      "identifierKind": "runtime_tag",
+      "issuer": "arcp://example",
+      "verificationStatus": "verified",
+      "evidenceRefs": ["ral:attestation:fixture-1"]
+    },
+    "instanceRef": {
+      "value": "thread-fixture-0001",
+      "identifierKind": "codex_thread",
+      "issuer": "test-host",
+      "verificationStatus": "observed",
+      "evidenceRefs": ["host-observation:fixture-1"]
+    },
+    "providerPrincipalRef": null
+  },
+  "mrmicCapabilities": {
+    "schema": "mrmic-capabilities/v1",
+    "mrmicVersion": "0.14.0",
+    "canvasSchemaVersion": "mrmic-canvas/0.14",
+    "mcpProtocolProfile": {"protocolVersion": "2025-11-25", "profile": "stateful-streamable-http-subset"},
+    "projectionModes": ["compat_frame_v0", "native_resource_portal_v1"],
+    "authModes": ["legacy_local", "bearer_principal_v1"],
+    "resourcePortal": {"supported": true, "schemaVersion": "native_resource_portal_v1"},
+    "runtimePresence": {"supported": true, "schemaVersion": "ephemeral_runtime_presence_v1", "durable": false},
+    "livePortalHost": {"supported": true, "stateVersion": "live_portal_host_v1"}
+  },
+  "resourceBinding": {"pmwWorkspaceId": "pmw-workspace-1", "provider": "tandem", "resourceKind": "browser_tab", "providerResourceId": "tab-1"},
+  "nativePortal": {
+    "id": "portal-browser-1", "canvasId": "root", "type": "resource_portal",
+    "transform": {"x": 100, "y": 120, "width": 640, "height": 420, "rotation": 0, "scaleX": 1, "scaleY": 1, "zIndex": 10},
+    "style": {}, "content": {"text": "tandem:browser_tab"}, "childIds": [], "bindings": [],
+    "metadata": {"portalSchema": "native_resource_portal_v1", "portal": {"portalId": "rbind-1", "pmwWorkspaceId": "pmw-workspace-1", "pmwTaskId": "pmw-task-1", "provider": "tandem", "resourceKind": "browser_tab", "providerResourceId": "tab-1", "displayMode": "snapshot", "interactionMode": "inspect"}},
+    "createdBy": {"actorType": "system", "actorId": "pmw-client-claim"},
+    "createdAt": "2026-08-24T00:00:00.000Z", "updatedAt": "2026-08-24T00:00:00.000Z", "revision": 0
+  }
+}
