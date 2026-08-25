@@ -68,6 +68,7 @@ def _read_source_payload(path: str | Path, config: FederationConfig) -> bytes:
     except OSError as error:
         raise FederationError("input_unreadable", str(path)) from error
     matched = None
+    attempts: list[str] = []
     for raw_root in config.allowed_source_roots:
         root_unresolved = Path(os.path.abspath(raw_root))
         try:
@@ -78,12 +79,20 @@ def _read_source_payload(path: str | Path, config: FederationConfig) -> bytes:
             target.relative_to(root)
         except WakeError as error:
             raise FederationError(error.code, error.message) from error
-        except (OSError, ValueError):
+        except (OSError, ValueError) as error:
+            attempts.append(
+                f"raw={raw_root!r},unresolved={root_unresolved!s},"
+                f"requested={requested!s},target={target!s},"
+                f"error={type(error).__name__}:{error}"
+            )
             continue
         matched = root
         break
     if matched is None or not target.is_file():
-        raise FederationError("payload_outside_allowlist", str(target))
+        raise FederationError(
+            "payload_outside_allowlist",
+            f"target={target}; attempts={' | '.join(attempts)}",
+        )
     return _read_bytes(target)
 
 

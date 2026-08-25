@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from eml_pmw.cli import main
 from eml_pmw.federation.authority import AuthorityVerification
+from eml_pmw.federation.cli import _read_source_payload
 from eml_pmw.federation.models import FederatedEvent, FederationConfig
 from eml_pmw.federation.reconcile import reconcile_event
 from eml_pmw.federation.store import FederationStore
@@ -94,6 +95,11 @@ class FederationCliTests(unittest.TestCase):
             "--delivery-id",
             f"delivery:{event_id}",
         ]
+
+    def test_exact_resolved_temp_root_is_valid_source_boundary(self):
+        config = FederationConfig.from_dict(_read_json(self.config))
+
+        self.assertEqual(_read_source_payload(self.payload, config), self.payload.read_bytes())
 
     def test_create_inventory_and_status_are_deterministic(self):
         created = run_cli(self.create_args())
