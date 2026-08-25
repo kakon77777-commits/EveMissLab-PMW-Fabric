@@ -33,6 +33,9 @@ evidence/*
 docs/*
 !docs/architecture/
 !docs/architecture/**
+!docs/superpowers/
+!docs/superpowers/plans/
+!docs/superpowers/plans/**
 !docs/security/
 !docs/security/**
 !docs/operations/
