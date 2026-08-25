@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/pmw/adapter-visibility-evidence-v1.json",
+  "title": "PMW Adapter Visibility Evidence v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "evidence_id",
+    "subject_task_ref",
+    "subject_turn_ref",
+    "adapter_kind",
+    "adapter_call_count",
+    "execution_state",
+    "adapter_read_outcome",
+    "adapter_item_count",
+    "adapter_error_code",
+    "local_capture_state",
+    "local_capture_kind",
+    "local_capture_portability",
+    "materialization_state",
+    "materialized_artifact_ref",
+    "materialized_artifact_sha256",
+    "materialized_artifact_bytes",
+    "portable_delivery_state",
+    "authorship_state",
+    "reconciliation_state",
+    "inference_barriers",
+    "observed_time_ref",
+    "evidence_digest"
+  ],
+  "properties": {
+    "schema": {"const": "pmw.adapter-visibility-evidence/0.1"},
+    "evidence_id": {"type": "string", "minLength": 1},
+    "subject_task_ref": {"type": "string", "minLength": 1},
+    "subject_turn_ref": {"type": "string", "minLength": 1},
+    "adapter_kind": {"type": "string", "minLength": 1},
+    "adapter_call_count": {"type": "integer", "minimum": 1},
+    "execution_state": {"enum": ["completed", "incomplete", "unmeasured"]},
+    "adapter_read_outcome": {"enum": ["body_available", "metadata_only", "empty_projection", "read_failed", "unmeasured"]},
+    "adapter_item_count": {"type": "integer", "minimum": 0},
+    "adapter_error_code": {"type": ["string", "null"], "minLength": 1},
+    "local_capture_state": {"enum": ["body_observed", "metadata_only", "not_observed", "unmeasured"]},
+    "local_capture_kind": {"enum": ["native_transcript", "host_log", "none"]},
+    "local_capture_portability": {"enum": ["local_only", "portable_verified", "unmeasured"]},
+    "materialization_state": {"enum": ["verified", "present_unverified", "absent", "unmeasured"]},
+    "materialized_artifact_ref": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "minLength": 1, "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"}
+      ]
+    },
+    "materialized_artifact_sha256": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[0-9A-F]{64}$"}]},
+    "materialized_artifact_bytes": {"type": ["integer", "null"], "minimum": 1},
+    "portable_delivery_state": {"enum": ["acknowledged_structured", "materialized", "uncertain", "not_proven"]},
+    "authorship_state": {"enum": ["receiver_observed", "claimed", "unmeasured"]},
+    "reconciliation_state": {"enum": ["locally_reconciled", "needs_reconciliation", "not_applicable"]},
+    "inference_barriers": {
+      "const": [
+        "turn_completed_does_not_imply_adapter_body_available",
+        "empty_projection_does_not_imply_no_response",
+        "local_capture_does_not_prove_portable_delivery",
+        "materialized_handoff_does_not_prove_original_adapter_delivery",
+        "delivery_or_materialization_does_not_prove_authorship_or_identity",
+        "no_automatic_resend_from_empty_projection"
+      ]
+    },
+    "observed_time_ref": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^ctcl:instant:[0-9a-fA-F-]{36}$"}]},
+    "evidence_digest": {"type": "string", "pattern": "^sha256:pmw-adapter-visibility-json-nfc-codepoint-v1:[0-9a-f]{64}$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"adapter_read_outcome": {"const": "body_available"}}, "required": ["adapter_read_outcome"]},
+      "then": {"properties": {"adapter_item_count": {"minimum": 1}, "adapter_error_code": {"const": null}}}
+    },
+    {
+      "if": {"properties": {"adapter_read_outcome": {"enum": ["empty_projection", "unmeasured"]}}, "required": ["adapter_read_outcome"]},
+      "then": {"properties": {"adapter_item_count": {"const": 0}, "adapter_error_code": {"const": null}}}
+    },
+    {
+      "if": {"properties": {"adapter_read_outcome": {"const": "read_failed"}}, "required": ["adapter_read_outcome"]},
+      "then": {"properties": {"adapter_item_count": {"const": 0}, "adapter_error_code": {"type": "string", "minLength": 1}}}
+    },
+    {
+      "if": {"properties": {"materialization_state": {"enum": ["verified", "present_unverified"]}}, "required": ["materialization_state"]},
+      "then": {"properties": {"materialized_artifact_ref": {"type": "string", "minLength": 1}, "materialized_artifact_sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"}, "materialized_artifact_bytes": {"type": "integer", "minimum": 1}}}
+    },
+    {
+      "if": {"properties": {"materialization_state": {"enum": ["absent", "unmeasured"]}}, "required": ["materialization_state"]},
+      "then": {"properties": {"materialized_artifact_ref": {"const": null}, "materialized_artifact_sha256": {"const": null}, "materialized_artifact_bytes": {"const": null}}}
+    },
+    {
+      "if": {"properties": {"local_capture_portability": {"const": "local_only"}}, "required": ["local_capture_portability"]},
+      "then": {"properties": {"portable_delivery_state": {"enum": ["uncertain", "not_proven"]}, "authorship_state": {"enum": ["claimed", "unmeasured"]}}}
+    }
+  ]
+}

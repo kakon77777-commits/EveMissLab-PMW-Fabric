@@ -1,0 +1,32 @@
+{
+  "adapter_call_count": 2,
+  "adapter_error_code": null,
+  "adapter_item_count": 0,
+  "adapter_kind": "codex_app.read_thread",
+  "adapter_read_outcome": "empty_projection",
+  "authorship_state": "unmeasured",
+  "evidence_digest": "sha256:pmw-adapter-visibility-json-nfc-codepoint-v1:7cc36877eff5ad486e0d045ca33b96f24d3d5b643b721b8d3e284688b8fb7d29",
+  "evidence_id": "visibility:codex-read-thread:2026-08-25:01",
+  "execution_state": "completed",
+  "inference_barriers": [
+    "turn_completed_does_not_imply_adapter_body_available",
+    "empty_projection_does_not_imply_no_response",
+    "local_capture_does_not_prove_portable_delivery",
+    "materialized_handoff_does_not_prove_original_adapter_delivery",
+    "delivery_or_materialization_does_not_prove_authorship_or_identity",
+    "no_automatic_resend_from_empty_projection"
+  ],
+  "local_capture_kind": "native_transcript",
+  "local_capture_portability": "local_only",
+  "local_capture_state": "body_observed",
+  "materialization_state": "verified",
+  "materialized_artifact_bytes": 6552,
+  "materialized_artifact_ref": "runtime/task-handoffs/2026-08-25_01a02e70_to_019fe51e_orientation-reconciliation.md",
+  "materialized_artifact_sha256": "68E066153F96EE8DF61CDBAADEB5A4E393A7DAB44133038E0728432BF5A42CF3",
+  "observed_time_ref": null,
+  "portable_delivery_state": "not_proven",
+  "reconciliation_state": "locally_reconciled",
+  "schema": "pmw.adapter-visibility-evidence/0.1",
+  "subject_task_ref": "codex-thread:01a02e70-e100-71b3-8c55-02858d7cc854",
+  "subject_turn_ref": "codex-turn:01a038cd-c55d-7003-a327-405cc8392495"
+}
