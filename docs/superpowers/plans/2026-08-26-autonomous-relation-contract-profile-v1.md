@@ -131,6 +131,7 @@ The reviewed docs-worktree baseline is `277 passed / 2 existing skips / 0 failed
 - Create: `src/eml_pmw/relations/references.py`
 - Create: `src/eml_pmw/relations/temporal.py`
 - Create: `src/eml_pmw/relations/policy.py`
+- Create: `src/eml_pmw/relations/contracts.py`
 - Create: `src/eml_pmw/contracts/relation_contract/__init__.py`
 - Create: `src/eml_pmw/contracts/relation_contract/normalized-instant-evidence-v1.schema.json`
 - Create: `src/eml_pmw/contracts/relation_contract/activation-policy-v1.schema.json`

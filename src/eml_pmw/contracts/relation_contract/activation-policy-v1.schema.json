@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/activation-policy-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "policy_id", "policy_version", "max_risk", "max_activation_duration_ms", "max_exit_notice_ms", "max_clock_uncertainty_ns", "allowed_evaluator_profiles", "allowed_clock_profiles", "require_revocable", "allow_redelegation", "allowed_residence_impact", "allowed_continuity_impact", "economic_terms_required", "content_digest"],
+  "properties": {
+    "schema": {"const": "arcp/activation-policy/0.1"},
+    "policy_id": {"type": "string", "minLength": 1},
+    "policy_version": {"type": "string", "minLength": 1},
+    "max_risk": {"enum": ["R0", "R1"]},
+    "max_activation_duration_ms": {"type": "integer", "minimum": 1},
+    "max_exit_notice_ms": {"type": "integer", "minimum": 0},
+    "max_clock_uncertainty_ns": {"type": "integer", "minimum": 0},
+    "allowed_evaluator_profiles": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "allowed_clock_profiles": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "require_revocable": {"const": true},
+    "allow_redelegation": {"const": false},
+    "allowed_residence_impact": {"const": ["none"]},
+    "allowed_continuity_impact": {"const": ["none"]},
+    "economic_terms_required": {"type": "null"},
+    "content_digest": {"type": "string", "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"}
+  }
+}

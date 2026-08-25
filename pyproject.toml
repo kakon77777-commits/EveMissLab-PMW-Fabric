@@ -35,4 +35,5 @@ where = ["src"]
 eml_pmw = [
   "contracts/*.json",
   "contracts/mrmic_phase13/*.json",
+  "contracts/relation_contract/*.json",
 ]

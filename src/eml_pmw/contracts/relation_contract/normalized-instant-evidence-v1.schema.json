@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/normalized-instant-evidence-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["instant_ref", "clock_profile_id", "normalized_unix_ns", "uncertainty_ns", "verification_status", "source_evidence_refs"],
+  "properties": {
+    "instant_ref": {"type": "string", "minLength": 1},
+    "clock_profile_id": {"type": "string", "minLength": 1},
+    "normalized_unix_ns": {"type": "string", "pattern": "^(?:0|-?[1-9][0-9]*)$"},
+    "uncertainty_ns": {"type": "integer", "minimum": 0},
+    "verification_status": {"enum": ["verified", "observed", "unmeasured", "rejected"]},
+    "source_evidence_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+  }
+}
