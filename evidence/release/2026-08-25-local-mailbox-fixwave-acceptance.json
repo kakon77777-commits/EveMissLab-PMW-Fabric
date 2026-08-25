@@ -1,0 +1,44 @@
+{
+  "schema_version": "eml-handoff/fixwave-acceptance-0.1",
+  "source_commit": "4d76eccf9502d284c0b3066ddfd6f4c64debf52e",
+  "review_base_commit": "9bce3032539468fbdc1f2139f88cb075442b129b",
+  "ctcl_instant": "ctcl:instant:06894854-3999-470a-960d-d1883e6ac7a3",
+  "original_review": {
+    "critical": 0,
+    "important": 5,
+    "minor": 0,
+    "verdict": "with_fixes"
+  },
+  "finding_controls": {
+    "binary_under_text_suffix": "closed",
+    "reparse_before_resolution": "closed",
+    "repeat_reply_orphan": "closed",
+    "concurrent_duplicate_race": "closed",
+    "ctcl_endpoint_https": "closed"
+  },
+  "verification": {
+    "unit_tests_run": 178,
+    "unit_tests_skipped": 2,
+    "unit_test_exit_code": 0,
+    "concurrent_control_iterations": 20,
+    "concurrent_control_failures": 0,
+    "compileall_exit_code": 0,
+    "publication_tree_passed": true,
+    "diff_check_exit_code": 0,
+    "wheel_sha256": "3D1A413BAFB83D3DF350C230ADCDAF65E62419F91FF1D61378743769D7870590",
+    "installed_entrypoints": [
+      "eml-pmw",
+      "eml-bridge",
+      "eml-wake",
+      "eml-handoff"
+    ]
+  },
+  "fixwave_reviewer_status": "unavailable_after_two_bounded_runtime_attempts",
+  "not_claimed": [
+    "independent_fixwave_acceptance",
+    "github_ci_green",
+    "merged_to_main",
+    "provider_delivery",
+    "resident_identity_continuity"
+  ]
+}
