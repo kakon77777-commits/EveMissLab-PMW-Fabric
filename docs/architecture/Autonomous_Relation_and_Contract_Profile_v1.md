@@ -140,6 +140,38 @@ Version one does not implement:
 The first schema family is hosted in the Fabric repository but uses ARCP
 semantic names. Package location does not transfer semantic ownership to PMW.
 
+Every `content_digest`, `receipt_digest`, or `projection_digest` is computed
+over the canonical object with that digest field omitted. The digest value is
+then inserted and validated against a fresh recomputation. A digest never
+includes itself, and changing the canonicalization/domain version changes both
+the prefix and digest body.
+
+### 5.0 ActivationPolicy
+
+Schema: `arcp/activation-policy/0.1`
+
+Required fields:
+
+```text
+policy_id
+policy_version
+max_risk                    R0 | R1
+max_activation_duration_ms  positive finite integer
+max_exit_notice_ms          non-negative finite integer
+max_clock_uncertainty_ns    non-negative finite integer
+allowed_evaluator_profiles[]
+allowed_clock_profiles[]
+require_revocable           true
+allow_redelegation          false
+allowed_residence_impact    [none]
+allowed_continuity_impact   [none]
+economic_terms_required     null
+content_digest
+```
+
+The policy is digest-pinned by each ContractVersion and activation event.
+Changing any policy field invalidates prior activation/candidate currency.
+
 ### 5.1 PartyEvidencePin
 
 Schema: `arcp/party-evidence-pin/0.1`
@@ -155,9 +187,11 @@ resolver_source_ref
 resolver_source_digest
 state_view_digest
 state_head_ref
+party_status                active | suspended | expired | tombstoned | unmeasured
 binding_ref                 nullable for non-runtime party
 binding_status              active | suspended | expired | tombstoned | ambiguous | unmeasured
-verification_status         verified | observed | claimed | unmeasured | rejected
+binding_ambiguity           boolean
+adapter_verification_status verified | observed | claimed | unmeasured | rejected
 observed_time_ref
 observed_time_status
 ```
@@ -685,7 +719,7 @@ one exact sufficiency rule:
 
 ```text
 adapter_verification_status = verified
-resident_status = active
+party_status = active
 binding_status = active
 binding_ambiguity = false
 ledger_head = current readback ledger head
