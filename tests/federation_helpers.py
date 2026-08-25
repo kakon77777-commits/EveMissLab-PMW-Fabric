@@ -46,6 +46,7 @@ def valid_event(**overrides):
         "payload_ref": "payloads/fixture.json",
         "payload_sha256": hashlib.sha256(PAYLOAD).hexdigest().upper(),
         "payload_media_type": "application/json",
+        "fabric_payload_class": "P0",
         "created_time_ref": None,
         "temporal_evidence_status": "unavailable",
         "local_recorded_at": "2026-08-25T00:00:00Z",
@@ -89,6 +90,19 @@ def event_for_replica(replica, sequence, event_id, parents=(), **overrides):
         },
         **overrides,
     )
+
+
+def observer(**overrides):
+    value = {
+        "observer_id": "observer:realm-b:fixture",
+        "realm_id": "realm:b",
+        "method": "local_file_read",
+        "observed_origin": None,
+        "observed_time_ref": None,
+        "advertised_missing_parent_ids": [],
+    }
+    value.update(deepcopy(overrides))
+    return value
 
 
 def valid_config(**overrides):

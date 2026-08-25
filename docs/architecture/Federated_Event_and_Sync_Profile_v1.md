@@ -159,6 +159,7 @@ authority_ref              nullable authority-artifact reference
 payload_ref                content-addressed relative reference
 payload_sha256             uppercase SHA-256
 payload_media_type         application/json | text/markdown | text/plain
+fabric_payload_class       P0 | P1; Fabric-owned and digest-bound
 created_time_ref           nullable CTCL registered-anchor reference
 temporal_evidence_status   registered_anchor | unavailable | unmeasured
 local_recorded_at          weak local insertion observation

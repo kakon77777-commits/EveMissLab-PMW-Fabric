@@ -15,7 +15,7 @@ EVENT_FIELDS = {
     "schema", "event_id", "event_kind", "subject_ref", "realm_ref", "replica_ref",
     "replica_seq", "causal_parents", "claimed_actor_ref", "claimed_instance_ref",
     "authority_ref", "payload_ref", "payload_sha256", "payload_media_type",
-    "created_time_ref", "temporal_evidence_status", "local_recorded_at",
+    "fabric_payload_class", "created_time_ref", "temporal_evidence_status", "local_recorded_at",
     "correction_of", "withdraws", "not_claimed",
 }
 REQUIRED_NONCLAIMS = {
@@ -142,6 +142,7 @@ class FederatedEvent:
     payload_ref: str
     payload_sha256: str
     payload_media_type: str
+    fabric_payload_class: str
     created_time_ref: str | None
     temporal_evidence_status: str
     local_recorded_at: str
@@ -157,7 +158,7 @@ class FederatedEvent:
             RealmRef.from_dict(value["realm_ref"]), ReplicaRef.from_dict(value["replica_ref"]),
             value["replica_seq"], tuple(value["causal_parents"]), value["claimed_actor_ref"],
             value["claimed_instance_ref"], value["authority_ref"], value["payload_ref"],
-            value["payload_sha256"], value["payload_media_type"], value["created_time_ref"],
+            value["payload_sha256"], value["payload_media_type"], value["fabric_payload_class"], value["created_time_ref"],
             value["temporal_evidence_status"], value["local_recorded_at"], value["correction_of"],
             value["withdraws"], tuple(value["not_claimed"]),
         )
@@ -175,6 +176,10 @@ class FederatedEvent:
             raise FederationError("payload_ref_invalid", item.payload_ref)
         if item.payload_media_type not in {"application/json", "text/markdown", "text/plain"}:
             raise FederationError("payload_media_type_invalid", item.payload_media_type)
+        if item.fabric_payload_class not in {"P0", "P1"}:
+            raise FederationError(
+                "fabric_payload_class_invalid", str(item.fabric_payload_class)
+            )
         if item.temporal_evidence_status == "registered_anchor":
             if not isinstance(item.created_time_ref, str) or not CTCL.fullmatch(item.created_time_ref):
                 raise FederationError("temporal_evidence_mismatch", item.event_id)

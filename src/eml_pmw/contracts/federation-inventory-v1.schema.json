@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/pmw/federation-inventory-v1.json",
+  "title": "PMW Federation Inventory v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "inventory_id", "generated_by_realm_id", "events", "replica_ranges", "causal_heads", "not_claimed", "inventory_digest"],
+  "properties": {
+    "schema": {"const": "pmw-federation-inventory/v1"},
+    "inventory_id": {"type": "string", "pattern": "^inventory:sha256:[0-9a-f]{64}$"},
+    "generated_by_realm_id": {"type": "string", "minLength": 1},
+    "events": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/event"}},
+    "replica_ranges": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/range"}},
+    "causal_heads": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "not_claimed": {"const": ["payload_body_included", "bearer_token_included", "private_memory_included", "resident_identity_verified", "global_causal_order", "remote_adoption"]},
+    "inventory_digest": {"type": "string", "pattern": "^sha256:pmw-federation-inventory-json-nfc-codepoint-v1:[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "event_digest", "replica_id", "store_generation", "replica_seq", "causal_parents", "payload_sha256", "payload_bytes", "fabric_payload_class", "availability"],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "event_digest": {"type": "string", "pattern": "^sha256:pmw-federated-event-json-nfc-codepoint-v1:[0-9a-f]{64}$"},
+        "replica_id": {"type": "string", "minLength": 1},
+        "store_generation": {"type": "string", "minLength": 1},
+        "replica_seq": {"type": "integer", "minimum": 1},
+        "causal_parents": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "payload_sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
+        "payload_bytes": {"type": "integer", "minimum": 0},
+        "fabric_payload_class": {"enum": ["P0", "P1"]},
+        "availability": {"enum": ["available", "unavailable"]}
+      }
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["replica_id", "store_generation", "minimum_sequence", "maximum_sequence", "event_count"],
+      "properties": {
+        "replica_id": {"type": "string", "minLength": 1},
+        "store_generation": {"type": "string", "minLength": 1},
+        "minimum_sequence": {"type": "integer", "minimum": 1},
+        "maximum_sequence": {"type": "integer", "minimum": 1},
+        "event_count": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

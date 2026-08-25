@@ -129,6 +129,33 @@ class FederationStore:
             / f"{delivery_key(delivery_id)}.json"
         )
 
+    def observation_path(self, event_id: str, observer_id: str) -> Path:
+        return (
+            self.observations_dir
+            / event_key(event_id)
+            / f"{event_key(observer_id)}.json"
+        )
+
+    def record_observation(
+        self, event_id: str, observer_id: str, record: dict[str, Any]
+    ) -> Path:
+        self.get_event(event_id)
+        path = self.observation_path(event_id, observer_id)
+        if path.exists():
+            if _read_object(path) != record:
+                raise FederationError("observation_content_collision", event_id)
+            return path
+        _publish_json(path, record)
+        return path
+
+    def quarantine_event(self, code: str, event: FederatedEvent) -> None:
+        self._quarantine(
+            code,
+            event,
+            existing_digest=None,
+            existing_event_id=None,
+        )
+
     def _validate_submission(self, event: FederatedEvent, payload: bytes) -> None:
         if not isinstance(payload, bytes):
             raise FederationError("payload_type_invalid", event.event_id)

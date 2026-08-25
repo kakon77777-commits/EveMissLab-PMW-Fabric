@@ -19,8 +19,22 @@ class FederationContractTests(unittest.TestCase):
         first = FederatedEvent.from_dict(valid_event())
         changed = FederatedEvent.from_dict({**valid_event(), "authority_ref": "authority:other"})
         parented = FederatedEvent.from_dict({**valid_event(), "causal_parents": ["event:parent"]})
+        p1 = FederatedEvent.from_dict({**valid_event(), "fabric_payload_class": "P1"})
         self.assertNotEqual(first.core_digest, changed.core_digest)
         self.assertNotEqual(first.core_digest, parented.core_digest)
+        self.assertNotEqual(first.core_digest, p1.core_digest)
+
+    def test_fabric_payload_class_is_required_and_bounded(self):
+        missing = valid_event()
+        missing.pop("fabric_payload_class")
+        with assert_error_code(self, "missing_field"):
+            FederatedEvent.from_dict(missing)
+        for invalid in ("", "P2", "public"):
+            with self.subTest(invalid=invalid):
+                with assert_error_code(self, "fabric_payload_class_invalid"):
+                    FederatedEvent.from_dict(
+                        valid_event(fabric_payload_class=invalid)
+                    )
 
     def test_delivery_and_host_fields_are_rejected(self):
         for field in ("delivery_id", "pane_id", "runtime_tag"):

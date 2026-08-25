@@ -3,7 +3,7 @@
   "$id": "https://evemisslab.com/schemas/pmw-federated-event-v1.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "event_id", "event_kind", "subject_ref", "realm_ref", "replica_ref", "replica_seq", "causal_parents", "claimed_actor_ref", "claimed_instance_ref", "authority_ref", "payload_ref", "payload_sha256", "payload_media_type", "created_time_ref", "temporal_evidence_status", "local_recorded_at", "correction_of", "withdraws", "not_claimed"],
+  "required": ["schema", "event_id", "event_kind", "subject_ref", "realm_ref", "replica_ref", "replica_seq", "causal_parents", "claimed_actor_ref", "claimed_instance_ref", "authority_ref", "payload_ref", "payload_sha256", "payload_media_type", "fabric_payload_class", "created_time_ref", "temporal_evidence_status", "local_recorded_at", "correction_of", "withdraws", "not_claimed"],
   "properties": {
     "schema": {"const": "pmw-federated-event/v1"},
     "event_id": {"type": "string", "minLength": 1},
@@ -19,6 +19,7 @@
     "payload_ref": {"type": "string", "pattern": "^payloads/[^.\\\\][^\\\\]*$"},
     "payload_sha256": {"type": "string", "pattern": "^[0-9A-F]{64}$"},
     "payload_media_type": {"enum": ["application/json", "text/markdown", "text/plain"]},
+    "fabric_payload_class": {"enum": ["P0", "P1"]},
     "created_time_ref": {"type": ["string", "null"]},
     "temporal_evidence_status": {"enum": ["registered_anchor", "unavailable", "unmeasured"]},
     "local_recorded_at": {"type": "string", "minLength": 1},
