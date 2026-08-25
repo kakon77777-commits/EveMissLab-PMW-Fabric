@@ -16,6 +16,8 @@ Implemented and tested:
   authority locks;
 - durable fresh-worker wake with strict authority, model, tools, budget,
   timeout, digest, CTCL, and idempotency boundaries.
+- Local Durable Handoff Mailbox v0.1 with outbox-first P0/P1 documents,
+  immutable claims/materializations/receipts, and duplicate-delivery control.
 
 Planned work is tracked in [ROADMAP.md](ROADMAP.md). The canonical design for
 the shared visual world is
@@ -24,6 +26,8 @@ Security boundaries are documented in
 [docs/security/SECURITY_BOUNDARIES.md](docs/security/SECURITY_BOUNDARIES.md),
 and the portable wake procedure is in
 [docs/operations/WAKE_QUICKSTART.md](docs/operations/WAKE_QUICKSTART.md).
+The provider-free file fallback is specified in
+[docs/architecture/Local_Durable_Handoff_Mailbox_v0.1.md](docs/architecture/Local_Durable_Handoff_Mailbox_v0.1.md).
 
 ## Install and verify
 
@@ -157,3 +161,36 @@ request CTCL anchor != ACK CTCL anchor
 CTCL HTTP registration is attempted once. If it is unavailable, the captured
 provider result remains durable with explicit temporal degradation; Claude is
 never replayed merely to obtain a timestamp.
+
+## Local durable handoff (`eml-handoff`)
+
+`eml-handoff` commits a shared P0/P1 document and immutable envelope before any
+Bridge, queue, Monitor, or Wake notification is attempted. It does not start a
+provider, does not wake an instance, and does not treat notification acceptance
+as receiver acknowledgement.
+
+```text
+payload committed
+→ envelope committed
+→ optional notification
+→ receiver claim
+→ payload materialization
+→ durable receipt or linked reply
+```
+
+Source-checkout example:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m eml_handoff --root D:\path\to\handoff-root --config D:\path\to\config.json create `
+  --payload D:\path\to\shared.md `
+  --sender claim:sender `
+  --sender-instance claim:instance `
+  --target-kind task `
+  --target-ref task:example `
+  --authority principal:example/cross-dialogue
+```
+
+Portable examples are in `examples/handoff/`. The initial local deployment
+allows only `shared_topic` and `task`; entity and exact-instance claims fail
+closed unless a host-verifiable binding adapter is explicitly supplied.

@@ -1,0 +1,23 @@
+{
+  "schema_version": "eml-handoff/config-0.1",
+  "allowed_source_roots": [
+    "<SHARED_ROOT>/handoffs",
+    "<SHARED_ROOT>/design-drafts"
+  ],
+  "allowed_payload_extensions": [
+    ".md",
+    ".json",
+    ".txt"
+  ],
+  "allowed_target_kinds": [
+    "shared_topic",
+    "task"
+  ],
+  "allowed_authority_refs": [
+    "principal:example/cross-dialogue"
+  ],
+  "default_max_payload_bytes": 1048576,
+  "hard_max_payload_bytes": 4194304,
+  "ctcl_endpoint": "https://commoninstant.org/v1/instants",
+  "strict_reparse_checks": true
+}

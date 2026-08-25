@@ -1,0 +1,27 @@
+{
+  "schema_version": "eml-handoff/local-acceptance-0.1",
+  "source_commit": "bab1eee1b5495ede993dbcbda7a0483b83db6d0a",
+  "ctcl_instant": "ctcl:instant:f37455c1-e41d-4071-80d6-814bfb42c2cd",
+  "handoff_id": "handoff:1eddfd4f-1938-4f3f-9598-6be8d15ecaed",
+  "reply_handoff_id": "handoff:65fd1f3e-01b3-46b3-9b7a-f42289e8130e",
+  "status": "acknowledged",
+  "request_payload_sha256": "C2219E93FD9822A3C64CF079FB12ADA82500E36976F9EC35D2D4C030AB048103",
+  "materialized_payload_sha256": "C2219E93FD9822A3C64CF079FB12ADA82500E36976F9EC35D2D4C030AB048103",
+  "reply_payload_sha256": "6B34479F52D1302F9D86C82F0B9351FA253BACABA160B213AB04A715A297C5A1",
+  "envelope_count": 2,
+  "claim_count": 1,
+  "materialization_count": 1,
+  "receipt_count": 1,
+  "duplicate_count": 2,
+  "notification_count": 3,
+  "network_calls": 0,
+  "temporal_evidence_status_inside_mailbox_flow": "unavailable",
+  "private_payload_in_evidence": false,
+  "not_proven": [
+    "recipient_understood_payload",
+    "resident_identity_continuity",
+    "cloud_replication",
+    "exact_instance_wake",
+    "provider_delivery"
+  ]
+}

@@ -164,6 +164,17 @@ class WakeStoreTests(unittest.TestCase):
         publish_no_replace(final, {"value": 1})
         self.assertTrue(final.exists())
 
+    def test_publish_bytes_no_replace_preserves_exact_bytes_and_refuses_overwrite(self):
+        from eml_wake.errors import WakeError
+        from eml_wake.filesystem import publish_bytes_no_replace
+
+        final = self.root / "published" / "payload.md"
+        publish_bytes_no_replace(final, b"hello\r\n")
+        self.assertEqual(final.read_bytes(), b"hello\r\n")
+        with self.assertRaises(WakeError) as caught:
+            publish_bytes_no_replace(final, b"changed")
+        self.assertEqual(caught.exception.code, "immutable_file_exists")
+
 
 if __name__ == "__main__":
     unittest.main()

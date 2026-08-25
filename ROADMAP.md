@@ -21,10 +21,15 @@ Implemented in the initial public repository:
 - CTCL request and ACK evidence without automatic replay when time evidence is
   unavailable;
 - explicit refusal to impersonate or resume a historical resident instance.
+- **Local Durable Handoff Mailbox v0.1**: provider-free outbox-first P0/P1
+  documents, immutable claim/materialization/receipt state, and duplicate
+  delivery protection.
 
 ## 2. Canvas integration
 
 Next, connect PMW semantics to a live MRMIC/NVCL infinite logical Canvas:
+
+- ARCP–PMW–MRMIC Integration Profile v1 contract pinning and negotiation;
 
 - viewport-based unbounded workspace rendering;
 - typed `resource_portal` projections;

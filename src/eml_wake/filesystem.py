@@ -19,13 +19,13 @@ class PayloadSnapshot:
     sha256: str
 
 
-def publish_no_replace(path: Path, value: dict) -> None:
+def publish_bytes_no_replace(path: Path, data: bytes) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     staging = path.parent / f".{path.name}.{uuid.uuid4().hex}.tmp"
     try:
         with staging.open("xb") as handle:
-            handle.write(canonical_bytes(value))
+            handle.write(data)
             handle.flush()
             os.fsync(handle.fileno())
         try:
@@ -43,6 +43,10 @@ def publish_no_replace(path: Path, value: dict) -> None:
             staging.unlink(missing_ok=True)
         except OSError:
             pass
+
+
+def publish_no_replace(path: Path, value: dict) -> None:
+    publish_bytes_no_replace(path, canonical_bytes(value))
 
 
 def read_canonical_file(path: Path) -> dict:
