@@ -148,6 +148,59 @@ class FederationStore:
         _publish_json(path, record)
         return path
 
+    def conflict_path(self, conflict_id: str) -> Path:
+        return self.conflicts_dir / f"{event_key(conflict_id)}.json"
+
+    def resolution_path(self, conflict_id: str, resolution_event_id: str) -> Path:
+        return (
+            self.resolutions_dir
+            / event_key(conflict_id)
+            / f"{event_key(resolution_event_id)}.json"
+        )
+
+    def record_conflict(self, conflict_id: str, record: dict[str, Any]) -> Path:
+        path = self.conflict_path(conflict_id)
+        if path.exists():
+            if _read_object(path) != record:
+                raise FederationError("conflict_content_collision", conflict_id)
+            return path
+        _publish_json(path, record)
+        return path
+
+    def get_conflict(self, conflict_id: str) -> dict[str, Any]:
+        path = self.conflict_path(conflict_id)
+        if not path.is_file():
+            raise FederationError("conflict_not_found", conflict_id)
+        record = _read_object(path)
+        if record.get("conflict_id") != conflict_id:
+            raise FederationError("conflict_filename_mismatch", conflict_id)
+        return record
+
+    def record_resolution(
+        self,
+        conflict_id: str,
+        resolution_event_id: str,
+        record: dict[str, Any],
+    ) -> Path:
+        self.get_conflict(conflict_id)
+        path = self.resolution_path(conflict_id, resolution_event_id)
+        if path.exists():
+            if _read_object(path) != record:
+                raise FederationError("resolution_content_collision", conflict_id)
+            return path
+        _publish_json(path, record)
+        return path
+
+    def event_payload(self, event: FederatedEvent) -> bytes:
+        path = self.payload_path(event)
+        try:
+            data = path.read_bytes()
+        except OSError as error:
+            raise FederationError("payload_unreadable", event.event_id) from error
+        if hashlib.sha256(data).hexdigest().upper() != event.payload_sha256:
+            raise FederationError("payload_integrity_failed", event.event_id)
+        return data
+
     def quarantine_event(self, code: str, event: FederatedEvent) -> None:
         self._quarantine(
             code,

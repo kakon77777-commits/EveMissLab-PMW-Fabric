@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from copy import deepcopy
 import hashlib
+import json
 
 from eml_wake.canonical import canonical_bytes
 
@@ -103,6 +104,26 @@ def observer(**overrides):
     }
     value.update(deepcopy(overrides))
     return value
+
+
+def update_event(replica, value, *, field="status", subject_ref="pmw-task:fixture", event_kind="pmw.task.field_set", authority_ref="authority:fixture"):
+    payload = json.dumps(
+        {"field": field, "value": value},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    event = event_for_replica(
+        replica,
+        1,
+        f"event:{replica}:{field}:{value}",
+        event_kind=event_kind,
+        subject_ref=subject_ref,
+        authority_ref=authority_ref,
+        payload_ref=f"payloads/{replica}-{field}-{value}.json",
+        payload_sha256=hashlib.sha256(payload).hexdigest().upper(),
+    )
+    return event, payload
 
 
 def valid_config(**overrides):
