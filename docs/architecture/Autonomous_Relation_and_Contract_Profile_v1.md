@@ -668,6 +668,11 @@ Every authority-required lifecycle event carries both
 authority evidence bytes/digest before applying the transition. Reusing one ref
 with changed content fails closed.
 
+The same pre-effect gate proves `event.created_time` is within the authority
+evidence's normalized `valid_from`/`expires_at` interval. Before-valid and
+expired authority is inactive; overlapping/uncomparable uncertainty is
+indeterminate. Neither reaches the effect handler.
+
 Every represented lifecycle event likewise carries both
 `representation_grant_ref` and `representation_grant_digest`; the pair is
 verified against exact grant bytes before the event can affect projection.

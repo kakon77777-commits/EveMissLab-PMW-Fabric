@@ -12,6 +12,7 @@ from tests.relation_contract_helpers import (
     fixture_objects,
     generic_profile_object,
     mutate_and_rebind,
+    normalized_instant,
     valid_contract_version,
     valid_commitment,
     valid_grant_authority_evidence,
@@ -451,6 +452,72 @@ class RelationContractLifecycleTests(unittest.TestCase):
                 [grant_event, draft, proposed],
                 fixture_objects(contract, issuer, authority, grant),
             )
+
+    def test_transition_authority_must_be_current_at_event_time(self):
+        cases = (
+            (
+                "not-yet-valid",
+                {
+                    "valid_from": normalized_instant("1300000000", 0),
+                    "expires_at": normalized_instant("3000000000", 0),
+                },
+                "transition_authority_inactive",
+            ),
+            (
+                "expired",
+                {
+                    "valid_from": normalized_instant("900000000", 0),
+                    "expires_at": normalized_instant("1100000000", 0),
+                },
+                "transition_authority_inactive",
+            ),
+            (
+                "expiry-overlap",
+                {
+                    "valid_from": normalized_instant("900000000", 0),
+                    "expires_at": normalized_instant("1200000000", 20),
+                },
+                "transition_authority_time_indeterminate",
+            ),
+        )
+        for label, time_updates, code in cases:
+            with self.subTest(label=label):
+                contract = valid_contract_version()
+                issuer = valid_grant_authority_evidence("a")
+                authority = mutate_and_rebind(
+                    issuer,
+                    {
+                        "grant_authority_evidence_id": f"grant-authority-evidence:{label}",
+                        **time_updates,
+                    },
+                )
+                grant = valid_representation_grant("a")
+                grant_event = granted_representation_event(
+                    issuer, grant, f"event:authority-time:{label}:grant"
+                )
+                draft = RelationContractEvent.from_dict(
+                    valid_relation_contract_event(
+                        "contract.drafted",
+                        contract,
+                        event_id=f"event:authority-time:{label}:draft",
+                        parents=(grant_event.event_id,),
+                    )
+                )
+                proposed = RelationContractEvent.from_dict(
+                    valid_relation_contract_event(
+                        "contract.proposed",
+                        contract,
+                        event_id=f"event:authority-time:{label}:proposed",
+                        parents=(draft.event_id,),
+                        authority=authority,
+                        representation_grant=grant,
+                    )
+                )
+                with assert_relation_error(self, code):
+                    reduce_events(
+                        [grant_event, draft, proposed],
+                        fixture_objects(contract, issuer, authority, grant),
+                    )
 
     def test_required_party_acceptances_derive_accepted_contract(self):
         contract = valid_contract_version()

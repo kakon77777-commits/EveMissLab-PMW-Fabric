@@ -203,6 +203,25 @@ class _ReducerState:
                 raise RelationContractError(
                     "transition_authority_scope_mismatch", event.event_id
                 )
+            try:
+                authority_start = compare_instants(
+                    authority.valid_from, event.created_time
+                )
+                authority_end = compare_instants(
+                    event.created_time, authority.expires_at
+                )
+            except RelationContractError as error:
+                raise RelationContractError(
+                    "transition_authority_time_indeterminate", event.event_id
+                ) from error
+            if authority_start == "after" or authority_end in {"after", "equal"}:
+                raise RelationContractError(
+                    "transition_authority_inactive", event.event_id
+                )
+            if authority_start == "overlap" or authority_end == "overlap":
+                raise RelationContractError(
+                    "transition_authority_time_indeterminate", event.event_id
+                )
             validate_grant_authority(
                 authority.grant_authority_evidence_id,
                 authority_map,

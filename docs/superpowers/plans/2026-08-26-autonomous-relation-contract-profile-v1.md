@@ -627,6 +627,12 @@ Every authority-required rule also requires both transition-authority ref and
 digest; the reducer loads the exact evidence object and rejects a digest/content
 mismatch before applying the effect.
 
+The permission gate also compares normalized authority `valid_from/expires_at`
+against `event.created_time`: before-valid/expired returns
+`transition_authority_inactive`, while overlapping or uncomparable uncertainty
+returns `transition_authority_time_indeterminate`. Focused RED controls cover
+all three states separately from digest and action/scope mismatch.
+
 Every event requires exactly these non-claims, plus any event-kind-specific additions:
 
 ```python
