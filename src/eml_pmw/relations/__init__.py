@@ -25,6 +25,13 @@ from .activation import (
     evaluate_activation,
     receipt_is_current,
 )
+from .store import (
+    AppendEventResult,
+    RelationContractStore,
+    RepairResult,
+    StoredObjectResult,
+    StoreVerification,
+)
 from .models_relation import (
     ContractVersion,
     ExitPath,
@@ -39,6 +46,7 @@ __all__ = [
     "ActivationInputs",
     "AuthorityCandidate",
     "AuthorityEvaluationReceipt",
+    "AppendEventResult",
     "CommitmentRecord",
     "ContractVersion",
     "ExitPath",
@@ -52,10 +60,14 @@ __all__ = [
     "PROFILE_CANON",
     "RelationContractError",
     "RelationContractEvent",
+    "RelationContractStore",
+    "RepairResult",
     "RelationVersion",
     "ReceiptCurrency",
     "RepresentationGrant",
     "SurvivalClause",
+    "StoredObjectResult",
+    "StoreVerification",
     "TerminationTerms",
     "compare_instants",
     "build_authority_candidate",
