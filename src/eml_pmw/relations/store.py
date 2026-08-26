@@ -17,7 +17,15 @@ from .errors import RelationContractError
 from .events import RelationContractEvent, validate_event_object_binding
 
 
-EXPECTED_TOP_LEVEL = {"objects", "events", "indexes", "duplicates", "quarantine"}
+EXPECTED_TOP_LEVEL = {
+    "objects",
+    "events",
+    "indexes",
+    "duplicates",
+    "quarantine",
+    "adoptions",
+}
+EXPECTED_ADOPTION_LAYOUT = {"pending", "adopted", "quarantine"}
 PRODUCTION_MARKERS = {
     ".git",
     "PRODUCTION_REGISTRY_ROOT.md",
@@ -139,6 +147,10 @@ class RelationContractStore:
         self.event_index_dir = self.root / "indexes" / "event-digests"
         self.duplicates_dir = self.root / "duplicates"
         self.quarantine_dir = self.root / "quarantine"
+        self.adoptions_dir = self.root / "adoptions"
+        self.adoptions_pending_dir = self.adoptions_dir / "pending"
+        self.adoptions_adopted_dir = self.adoptions_dir / "adopted"
+        self.adoptions_quarantine_dir = self.adoptions_dir / "quarantine"
         for directory in (
             self.objects_dir,
             self.events_dir,
@@ -146,6 +158,10 @@ class RelationContractStore:
             self.event_index_dir,
             self.duplicates_dir,
             self.quarantine_dir,
+            self.adoptions_dir,
+            self.adoptions_pending_dir,
+            self.adoptions_adopted_dir,
+            self.adoptions_quarantine_dir,
         ):
             directory.mkdir(parents=True, exist_ok=True)
         try:
@@ -157,6 +173,10 @@ class RelationContractStore:
                 self.event_index_dir,
                 self.duplicates_dir,
                 self.quarantine_dir,
+                self.adoptions_dir,
+                self.adoptions_pending_dir,
+                self.adoptions_adopted_dir,
+                self.adoptions_quarantine_dir,
             ):
                 _verify_no_reparse(self.root, directory)
         except (OSError, ValueError, WakeError) as error:
@@ -722,6 +742,12 @@ class RelationContractStore:
         errors: list[str] = []
         existing = {item.name for item in self.root.iterdir()}
         if existing - EXPECTED_TOP_LEVEL:
+            errors.append("storage_layout_invalid")
+        adoption_entries = {item.name for item in self.adoptions_dir.iterdir()}
+        if adoption_entries != EXPECTED_ADOPTION_LAYOUT or any(
+            not (self.adoptions_dir / name).is_dir()
+            for name in EXPECTED_ADOPTION_LAYOUT
+        ):
             errors.append("storage_layout_invalid")
         object_count = 0
         event_count = 0

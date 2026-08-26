@@ -28,6 +28,16 @@ from .arcp_adapter import (
     OfflineEvaluatorGrant,
     evaluate_with_port,
 )
+from .federation_adapter import (
+    AdoptionHistoryVerification,
+    AdoptionResult,
+    ExplicitRelationAdoptionReceipt,
+    ImportedRelationObservation,
+    adopt_relation_event,
+    inspect_imported_relation_event,
+    verify_adoption_history,
+    wrap_relation_event,
+)
 from .activation import (
     ActivationDecision,
     ActivationInputs,
@@ -53,6 +63,8 @@ from .models_relation import (
 
 __all__ = [
     "ActivationPolicy",
+    "AdoptionHistoryVerification",
+    "AdoptionResult",
     "ActivationDecision",
     "ActivationInputs",
     "AuthorityCandidate",
@@ -65,6 +77,7 @@ __all__ = [
     "ContractVersion",
     "DeterministicAuthorityEvaluator",
     "EvaluationDecision",
+    "ExplicitRelationAdoptionReceipt",
     "ExitPath",
     "EVENT_KINDS",
     "EVENT_RULES",
@@ -72,6 +85,7 @@ __all__ = [
     "NormalizedInstantEvidence",
     "OfflineEvaluatorGrant",
     "LifecycleProjection",
+    "ImportedRelationObservation",
     "PartyEvidencePin",
     "PartyAcceptance",
     "PROFILE_CANON",
@@ -88,10 +102,12 @@ __all__ = [
     "StoreVerification",
     "TerminationTerms",
     "compare_instants",
+    "adopt_relation_event",
     "build_authority_candidate",
     "evaluate_activation",
     "evaluate_with_port",
     "explain_subject",
+    "inspect_imported_relation_event",
     "object_content_digest",
     "profile_digest",
     "projection_digest",
@@ -100,5 +116,7 @@ __all__ = [
     "rebuild_projection",
     "receipt_is_current",
     "validate_grant_authority",
+    "verify_adoption_history",
     "validate_portable_ref",
+    "wrap_relation_event",
 ]
