@@ -25,6 +25,7 @@ FORBIDDEN_IMPORTS = (
     "httpx",
     "openai",
     "requests",
+    "sedb_ral",
     "socket",
     "subprocess",
     "urllib.request",

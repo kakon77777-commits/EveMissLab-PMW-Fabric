@@ -18,6 +18,7 @@ from .authority import ral_pin_sufficient, validate_grant_authority
 from .events import EVENT_KINDS, EVENT_RULES, RelationContractEvent
 from .reducer import LifecycleProjection, reduce_events
 from .projector import explain_subject, projection_digest, rebuild_projection
+from .ral_adapter import RalPartyEvidenceAdapter
 from .activation import (
     ActivationDecision,
     ActivationInputs,
@@ -62,6 +63,7 @@ __all__ = [
     "RelationContractError",
     "RelationContractEvent",
     "RelationContractStore",
+    "RalPartyEvidenceAdapter",
     "RepairResult",
     "RelationVersion",
     "ReceiptCurrency",
