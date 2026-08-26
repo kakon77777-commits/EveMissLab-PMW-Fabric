@@ -12,7 +12,11 @@ from eml_pmw.relations.arcp_adapter import (
     evaluate_with_port,
 )
 from eml_pmw.relations.errors import RelationContractError
-from eml_pmw.relations.models_authority import AuthorityCandidate
+from eml_pmw.relations.canonical import object_content_digest
+from eml_pmw.relations.models_authority import (
+    AuthorityCandidate,
+    AuthorityEvaluationReceipt,
+)
 from eml_pmw.relations.temporal import NormalizedInstantEvidence
 from tests.relation_contract_helpers import (
     assert_relation_error,
@@ -147,6 +151,99 @@ class RelationContractArcpAdapterTests(unittest.TestCase):
 
         with assert_relation_error(self, "authority_evaluation_binding_mismatch"):
             evaluate_with_port(WrongReceiptEvaluator(), self.candidate, now())
+
+    def test_replayed_receipt_must_match_complete_invocation_time(self):
+        original_now = now()
+        old_receipt = self.evaluator.evaluate(self.candidate, original_now)
+
+        class ReplayEvaluator:
+            def evaluate(self, _candidate, _now):
+                return old_receipt
+
+        control = evaluate_with_port(
+            ReplayEvaluator(), self.candidate, original_now
+        )
+        self.assertEqual(control.status, "authorized")
+
+        cases = (
+            ("different-time", now("1600000000")),
+            ("after-expiry", now("4000000000")),
+            ("different-uncertainty", now("1500000000", uncertainty_ns=1)),
+            (
+                "different-source",
+                NormalizedInstantEvidence.from_dict(
+                    normalized_instant(
+                        "1500000000",
+                        0,
+                        source_evidence_refs=["evidence:clock:other"],
+                    )
+                ),
+            ),
+            (
+                "different-instant-ref",
+                NormalizedInstantEvidence.from_dict(
+                    normalized_instant(
+                        "1500000000",
+                        0,
+                        instant_ref="instant:fixture:other",
+                    )
+                ),
+            ),
+            (
+                "different-clock-profile",
+                NormalizedInstantEvidence.from_dict(
+                    normalized_instant(
+                        "1500000000",
+                        0,
+                        clock_profile_id="clock:other:v1",
+                    )
+                ),
+            ),
+        )
+        for label, invocation_now in cases:
+            with self.subTest(label=label):
+                with assert_relation_error(
+                    self, "authority_evaluation_time_mismatch"
+                ):
+                    evaluate_with_port(
+                        ReplayEvaluator(), self.candidate, invocation_now
+                    )
+
+        after_expiry = now("4000000000")
+        forged_value = old_receipt.to_dict()
+        forged_value["evaluated_at"] = after_expiry.to_dict()
+        forged_value["receipt_digest"] = object_content_digest(
+            forged_value, "receipt_digest"
+        )
+        forged_after_expiry = AuthorityEvaluationReceipt.from_dict(forged_value)
+
+        class FreshTimestampExpiredAuthorization:
+            def evaluate(self, _candidate, _now):
+                return forged_after_expiry
+
+        with assert_relation_error(self, "authority_resolution_stale"):
+            evaluate_with_port(
+                FreshTimestampExpiredAuthorization(),
+                self.candidate,
+                after_expiry,
+            )
+
+    def test_port_validates_candidate_and_now_before_external_call(self):
+        class CallTrap:
+            called = False
+
+            def evaluate(self, _candidate, _now):
+                self.called = True
+                raise AssertionError("external evaluator must not be called")
+
+        trap = CallTrap()
+        with assert_relation_error(self, "authority_candidate_invalid"):
+            evaluate_with_port(trap, object(), now())
+        self.assertFalse(trap.called)
+
+        with assert_relation_error(self, "temporal_evidence_invalid"):
+            evaluate_with_port(trap, self.candidate, object())
+        self.assertFalse(trap.called)
 
     def test_each_fake_policy_conjunct_is_the_sole_deciding_factor(self):
         cases = (

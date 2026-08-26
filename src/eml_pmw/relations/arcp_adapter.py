@@ -269,8 +269,25 @@ class DeterministicAuthorityEvaluator:
 
 
 def _validate_receipt_binding(
-    receipt: AuthorityEvaluationReceipt, candidate: AuthorityCandidate
+    receipt: AuthorityEvaluationReceipt,
+    candidate: AuthorityCandidate,
+    now: NormalizedInstantEvidence,
 ) -> None:
+    if receipt.evaluated_at.to_dict() != now.to_dict():
+        raise RelationContractError(
+            "authority_evaluation_time_mismatch", candidate.candidate_id
+        )
+    if receipt.authority_resolution["status"] == "authorized":
+        try:
+            current_before_expiry = compare_instants(
+                now, candidate.expires_at
+            ) == "before"
+        except RelationContractError:
+            current_before_expiry = False
+        if not current_before_expiry:
+            raise RelationContractError(
+                "authority_resolution_stale", candidate.candidate_id
+            )
     resolution = receipt.authority_resolution
     if (
         receipt.candidate_ref != candidate.candidate_id
@@ -302,6 +319,10 @@ def evaluate_with_port(
     candidate: AuthorityCandidate,
     now: NormalizedInstantEvidence,
 ) -> EvaluationDecision:
+    if not isinstance(candidate, AuthorityCandidate):
+        raise RelationContractError("authority_candidate_invalid", "candidate")
+    if not isinstance(now, NormalizedInstantEvidence):
+        raise RelationContractError("temporal_evidence_invalid", "now")
     if candidate.candidate_status != "eligible":
         raise RelationContractError(
             "authority_candidate_not_eligible", candidate.candidate_id
@@ -318,7 +339,7 @@ def evaluate_with_port(
         raise RelationContractError(
             "authority_evaluation_invalid", candidate.candidate_id
         )
-    _validate_receipt_binding(receipt, candidate)
+    _validate_receipt_binding(receipt, candidate, now)
     return EvaluationDecision(
         str(receipt.authority_resolution["status"]), (), receipt
     )
