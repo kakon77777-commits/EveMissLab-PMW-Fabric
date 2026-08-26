@@ -1,3 +1,3 @@
 """EveMissLab Canvas-first PMW Fabric Runtime MVP."""
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"

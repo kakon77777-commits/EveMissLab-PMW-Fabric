@@ -302,6 +302,72 @@ class RelationContractProjectionTests(unittest.TestCase):
         jsonschema.validate(value, schema)
         self.assertEqual(value["projection_digest"], projection_digest(value))
 
+    def test_audit_history_flag_is_bound_to_complete_exact_event_set(self):
+        store, _, _, _ = active_store(self.root / "audit-history")
+        value = loads_strict(rebuild_projection(store))
+        self.assertTrue(value["audit_history_retained"])
+        self.assertIn(
+            "audit_history_completeness_without_external_checkpoint",
+            value["not_claimed"],
+        )
+        self.assertEqual(
+            value["source_event_digests"],
+            sorted(event.event_digest for event in store.events()),
+        )
+
+        schema = load_relation_contract("relation-contract-projection-v1.schema.json")
+        old_shape = dict(value)
+        old_shape.pop("audit_history_retained")
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(old_shape, schema)
+
+        changed = dict(value)
+        changed["audit_history_retained"] = False
+        self.assertNotEqual(projection_digest(changed), value["projection_digest"])
+
+    def test_missing_cycle_or_duplicate_event_set_produces_no_projection(self):
+        relation = mutate_and_rebind(
+            valid_relation_version(),
+            {"relation_class": "descriptive", "acceptance_rule": "none"},
+        )
+        left = RelationContractEvent.from_dict(
+            valid_relation_contract_event(
+                "relation.recorded",
+                relation,
+                event_id="event:projection:left",
+            )
+        )
+        missing = replace(left, causal_parents=("event:projection:missing",))
+        with assert_relation_error(self, "contract_parent_missing"):
+            rebuild_projection(
+                ProjectionFixtureSource(
+                    [missing], {relation["content_digest"]: relation}
+                )
+            )
+
+        right = RelationContractEvent.from_dict(
+            valid_relation_contract_event(
+                "relation.recorded",
+                relation,
+                event_id="event:projection:right",
+                parents=(left.event_id,),
+            )
+        )
+        cycle_left = replace(left, causal_parents=(right.event_id,))
+        with assert_relation_error(self, "causal_cycle"):
+            rebuild_projection(
+                ProjectionFixtureSource(
+                    [cycle_left, right], {relation["content_digest"]: relation}
+                )
+            )
+
+        with assert_relation_error(self, "projection_event_set_invalid"):
+            rebuild_projection(
+                ProjectionFixtureSource(
+                    [left, left], {relation["content_digest"]: relation}
+                )
+            )
+
     def test_invalid_or_repairable_store_is_not_projected(self):
         store, _, _, _ = active_store(self.root / "invalid")
         first_index = next((store.root / "indexes" / "object-digests").glob("*.json"))

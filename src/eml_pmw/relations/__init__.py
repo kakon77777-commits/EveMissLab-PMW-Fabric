@@ -38,6 +38,13 @@ from .federation_adapter import (
     verify_adoption_history,
     wrap_relation_event,
 )
+from .portability import (
+    ConformanceResult,
+    PortabilityFinding,
+    PortabilityReport,
+    run_portable_conformance,
+    scan_portable_profile,
+)
 from .activation import (
     ActivationDecision,
     ActivationInputs,
@@ -74,6 +81,7 @@ __all__ = [
     "AuthorityEvaluatorUnavailable",
     "AppendEventResult",
     "CommitmentRecord",
+    "ConformanceResult",
     "ContractVersion",
     "DeterministicAuthorityEvaluator",
     "EvaluationDecision",
@@ -87,6 +95,8 @@ __all__ = [
     "LifecycleProjection",
     "ImportedRelationObservation",
     "PartyEvidencePin",
+    "PortabilityFinding",
+    "PortabilityReport",
     "PartyAcceptance",
     "PROFILE_CANON",
     "RelationContractError",
@@ -115,6 +125,8 @@ __all__ = [
     "reduce_events",
     "rebuild_projection",
     "receipt_is_current",
+    "run_portable_conformance",
+    "scan_portable_profile",
     "validate_grant_authority",
     "verify_adoption_history",
     "validate_portable_ref",

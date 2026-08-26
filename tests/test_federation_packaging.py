@@ -29,7 +29,7 @@ FEDERATION_SCHEMAS = (
 
 
 class FederationPackagingTests(unittest.TestCase):
-    def test_checked_in_acceptance_evidence_matches_reviewed_candidate(self):
+    def test_historical_federation_evidence_remains_0_3_0(self):
         path = ROOT / "evidence" / "release" / "2026-08-25-federation-v1-acceptance.json"
         value = json.loads(path.read_text(encoding="utf-8"))
 
@@ -45,12 +45,14 @@ class FederationPackagingTests(unittest.TestCase):
         self.assertEqual(value["github_actions"]["run_id"], 32859449827)
         self.assertEqual(value["effect_counts"], {"ctcl_calls": 0, "network_calls": 0, "private_reads": 0, "production_registry_writes": 0, "provider_calls": 0})
 
-    def test_version_and_package_resources_publish_complete_profile(self):
+    def test_current_project_and_package_version_are_0_4_0(self):
         project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))[
             "project"
         ]
-        self.assertEqual(project["version"], "0.3.0")
-        self.assertEqual(eml_pmw.__version__, "0.3.0")
+        self.assertEqual(project["version"], "0.4.0")
+        self.assertEqual(eml_pmw.__version__, "0.4.0")
+
+    def test_federation_resources_remain_packaged(self):
         contracts = files("eml_pmw.contracts")
         for name in FEDERATION_SCHEMAS:
             with self.subTest(name=name):

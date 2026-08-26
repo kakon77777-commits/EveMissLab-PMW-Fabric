@@ -12,11 +12,11 @@ from .reducer import LifecycleProjection, reduce_events
 
 PROJECTION_SCHEMA = "arcp/relation-contract-projection/0.1"
 PROJECTABLE_STORE_STATUSES = {
-    "empty",
     "internally_consistent",
     "checkpoint_verified",
 }
 PROJECTION_NONCLAIMS = (
+    "audit_history_completeness_without_external_checkpoint",
     "authority_evaluation_is_execution",
     "contract_activation_is_execution",
     "delivery_is_acceptance",
@@ -231,6 +231,7 @@ def _build_projection(
     value = {
         "schema": PROJECTION_SCHEMA,
         "projection_digest": "",
+        "audit_history_retained": True,
         "source_event_digests": sorted(event.event_digest for event in events),
         "relations": relations,
         "contracts": contracts,
@@ -254,6 +255,15 @@ def rebuild_projection(store: Any) -> bytes:
 
     _require_projectable(store)
     events = tuple(store.events())
+    event_ids = tuple(event.event_id for event in events)
+    event_digests = tuple(event.event_digest for event in events)
+    if (
+        len(event_ids) != len(set(event_ids))
+        or len(event_digests) != len(set(event_digests))
+    ):
+        raise RelationContractError(
+            "projection_event_set_invalid", "duplicate event"
+        )
     objects = store.objects_by_digest()
     lifecycle = reduce_events(events, objects)
     return canonical_bytes(_build_projection(events, objects, lifecycle))

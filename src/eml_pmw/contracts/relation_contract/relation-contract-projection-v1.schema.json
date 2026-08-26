@@ -6,6 +6,7 @@
   "required": [
     "schema",
     "projection_digest",
+    "audit_history_retained",
     "source_event_digests",
     "relations",
     "contracts",
@@ -21,6 +22,7 @@
   "properties": {
     "schema": {"const": "arcp/relation-contract-projection/0.1"},
     "projection_digest": {"$ref": "#/$defs/profileDigest"},
+    "audit_history_retained": {"const": true},
     "source_event_digests": {"$ref": "#/$defs/digestArray"},
     "relations": {
       "type": "object",

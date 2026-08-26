@@ -25,6 +25,10 @@ Implemented and tested:
   inventory-first offline exchange, causal conflict preservation, explicit
   authority-bound resolution, adapter-visibility evidence, and a digest-pinned
   SEDB-RAL public-projection seam.
+- Autonomous Relation and Contract Profile v1 candidate with exact party
+  acceptance, bounded representation, append-only lifecycle state, deterministic
+  projection, read-only current RAL evidence, an offline ARCP evaluator port,
+  explicit federation adoption, and Windows/HDUS portability controls.
 
 Planned work is tracked in [ROADMAP.md](ROADMAP.md). The canonical design for
 the shared visual world is
@@ -149,6 +153,36 @@ vendor the schema or mutate a registry head.
 ## Same-database composition
 
 `FabricJournal` tables use `pmw_` prefixes and can share the same SQLite file as the existing `eml_bridge` journal. This makes the Herdr runtime bridge an adapter/provider without destructive migration.
+
+## Offline autonomous relation/contract profile (`eml-pmw`)
+
+Version 0.4.0 adds a provider-neutral, host-neutral relation/contract profile.
+Fabric owns portable records, lifecycle events, the append-only local reference
+store, projections, and federation envelopes. RAL remains a digest-pinned
+read-only party/binding evidence source; an ARCP evaluator remains a separate
+authority-decision boundary.
+
+```text
+relation != acceptance != contract != representation
+authority candidate != authority resolution != capability != execution
+delivery != adoption != acceptance
+```
+
+The five offline commands are:
+
+```powershell
+eml-pmw relation-contract-validate FILE --kind KIND [--policy POLICY]
+eml-pmw relation-contract-append --root ROOT --object FILE --event FILE [--policy POLICY]
+eml-pmw relation-contract-project --root ROOT
+eml-pmw relation-contract-explain --root ROOT SUBJECT_REF
+eml-pmw relation-contract-verify --root ROOT [--expected-head DIGEST]
+```
+
+The candidate supports only P0/P1, R0/R1, finite expiry, revocation, explicit
+acceptance/adoption, and synthetic/offline conformance. It creates no real
+contract, performs no provider action, does not call a live ARCP evaluator,
+does not mutate production SEDB-RAL or a private Residence, and does not
+implement employment, salary, compensation, or other economic terms.
 
 ## Durable external wake (`eml-wake`)
 
