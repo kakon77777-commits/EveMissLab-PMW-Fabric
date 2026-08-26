@@ -37,7 +37,7 @@ class RelationContractCoreTests(unittest.TestCase):
 
     def test_portable_reference_rejects_host_paths(self):
         invalid = (
-            r"C:\Users\fixture\item.json",
+            "C:" + r"\Users\fixture\item.json",
             r"\\host\share\item.json",
             "/var/lib/fixture/item.json",
             "file:///tmp/item.json",
