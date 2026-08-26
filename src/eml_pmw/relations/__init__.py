@@ -19,6 +19,15 @@ from .events import EVENT_KINDS, EVENT_RULES, RelationContractEvent
 from .reducer import LifecycleProjection, reduce_events
 from .projector import explain_subject, projection_digest, rebuild_projection
 from .ral_adapter import RalPartyEvidenceAdapter
+from .arcp_adapter import (
+    AuthorityEvaluatorIndeterminate,
+    AuthorityEvaluatorPort,
+    AuthorityEvaluatorUnavailable,
+    DeterministicAuthorityEvaluator,
+    EvaluationDecision,
+    OfflineEvaluatorGrant,
+    evaluate_with_port,
+)
 from .activation import (
     ActivationDecision,
     ActivationInputs,
@@ -48,14 +57,20 @@ __all__ = [
     "ActivationInputs",
     "AuthorityCandidate",
     "AuthorityEvaluationReceipt",
+    "AuthorityEvaluatorIndeterminate",
+    "AuthorityEvaluatorPort",
+    "AuthorityEvaluatorUnavailable",
     "AppendEventResult",
     "CommitmentRecord",
     "ContractVersion",
+    "DeterministicAuthorityEvaluator",
+    "EvaluationDecision",
     "ExitPath",
     "EVENT_KINDS",
     "EVENT_RULES",
     "GrantAuthorityEvidence",
     "NormalizedInstantEvidence",
+    "OfflineEvaluatorGrant",
     "LifecycleProjection",
     "PartyEvidencePin",
     "PartyAcceptance",
@@ -75,6 +90,7 @@ __all__ = [
     "compare_instants",
     "build_authority_candidate",
     "evaluate_activation",
+    "evaluate_with_port",
     "explain_subject",
     "object_content_digest",
     "profile_digest",
