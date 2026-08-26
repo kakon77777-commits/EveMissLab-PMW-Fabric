@@ -418,6 +418,29 @@ def adopt_relation_event(
     if not isinstance(local_store, RelationContractStore):
         raise RelationContractError("adoption_store_invalid", "store")
     receipt = _validated_receipt(explicit_adoption_receipt)
+    quarantine_path = _record_path(
+        local_store, "quarantined", receipt.adoption_id
+    )
+    if quarantine_path.exists():
+        existing = _read_state_record(
+            local_store, quarantine_path, "quarantined"
+        )
+        if (
+            not _observation_valid(observation)
+            and existing["receipt_digest"] == receipt.receipt_digest
+            and existing["observation_digest"] == observation.observation_digest
+        ):
+            return AdoptionResult(
+                "quarantined",
+                receipt.adoption_id,
+                observation.relation_event.event_id,
+                (),
+                (),
+                str(quarantine_path),
+            )
+        raise RelationContractError(
+            "adoption_id_quarantined", receipt.adoption_id
+        )
     adopted_path = _record_path(local_store, "adopted", receipt.adoption_id)
     if adopted_path.exists():
         existing = _read_state_record(local_store, adopted_path, "adopted")
@@ -559,9 +582,14 @@ def verify_adoption_history(
     for (adoption_id, _status), value in records.items():
         pending = records.get((adoption_id, "pending_dependencies"))
         adopted = records.get((adoption_id, "adopted"))
+        quarantined = records.get((adoption_id, "quarantined"))
         if pending is not None and adopted is not None and (
             pending["receipt_digest"] != adopted["receipt_digest"]
             or pending["observation_digest"] != adopted["observation_digest"]
+        ):
+            errors.append("adoption_history_conflict")
+        if quarantined is not None and (
+            pending is not None or adopted is not None
         ):
             errors.append("adoption_history_conflict")
         if value["status"] == "adopted":

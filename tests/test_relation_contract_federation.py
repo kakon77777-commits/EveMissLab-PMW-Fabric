@@ -25,6 +25,8 @@ from eml_pmw.relations.federation_adapter import (
     inspect_imported_relation_event,
     verify_adoption_history,
     wrap_relation_event,
+    _record_path,
+    _state_record,
 )
 from eml_pmw.relations.reducer import reduce_events
 from eml_pmw.relations.store import RelationContractStore
@@ -212,9 +214,15 @@ class RelationContractFederationTests(unittest.TestCase):
             len(list(local.adoptions_quarantine_dir.glob("*.json"))), 1
         )
 
-        adopted = adopt_relation_event(observation, receipt, local)
+        with assert_relation_error(self, "adoption_id_quarantined"):
+            adopt_relation_event(observation, receipt, local)
+
+        corrected_receipt = adoption_receipt(
+            observation, "adoption:fixture:quarantine:corrected"
+        )
+        adopted = adopt_relation_event(observation, corrected_receipt, local)
         self.assertEqual(adopted.status, "adopted")
-        changed_value = receipt.to_dict()
+        changed_value = corrected_receipt.to_dict()
         changed_value["receiver_realm_id"] = "realm:other"
         changed_value["receipt_digest"] = ExplicitRelationAdoptionReceipt.digest_for(
             changed_value
@@ -222,6 +230,38 @@ class RelationContractFederationTests(unittest.TestCase):
         changed = ExplicitRelationAdoptionReceipt.from_dict(changed_value)
         with assert_relation_error(self, "adoption_id_collision"):
             adopt_relation_event(observation, changed, local)
+        history = verify_adoption_history(local)
+        self.assertEqual(history.status, "verified")
+        self.assertEqual(history.quarantine_count, 1)
+        self.assertEqual(history.adopted_count, 1)
+
+    def test_manually_persisted_quarantine_and_adopted_same_id_is_invalid(self):
+        relation = valid_relation_version(
+            relation_class="descriptive", acceptance_rule="none"
+        )
+        event = RelationContractEvent.from_dict(
+            valid_relation_contract_event(
+                "relation.recorded",
+                relation,
+                event_id="event:federation:cross-status",
+            )
+        )
+        _, _, observation = observation_for(event)
+        local = RelationContractStore(self.root / "cross-status")
+        local.put_object("relation", relation)
+        receipt = adoption_receipt(observation, "adoption:fixture:cross-status")
+        tampered = replace(observation, payload_sha256="0" * 64)
+        self.assertEqual(
+            adopt_relation_event(tampered, receipt, local).status,
+            "quarantined",
+        )
+
+        adopted_record = _state_record(receipt, observation, status="adopted")
+        adopted_path = _record_path(local, "adopted", receipt.adoption_id)
+        local._publish_store_record(adopted_path, adopted_record)
+        verification = verify_adoption_history(local)
+        self.assertEqual(verification.status, "invalid")
+        self.assertIn("adoption_history_conflict", verification.error_codes)
 
     def test_wrap_and_inspect_are_exact_p0_p1_and_reject_other_classes(self):
         relation = valid_relation_version(

@@ -405,16 +405,8 @@ class RelationContractOfflineE2ETests(unittest.TestCase):
             windows = run_portable_conformance(FakeRealm("windows_host"), resolver)
             hdus = run_portable_conformance(FakeRealm("hdus_host"), resolver)
             self.assertEqual(windows.semantic_digest, hdus.semantic_digest)
-            self.assertEqual(
-                windows.effect_counts,
-                {
-                    "network_calls": 0,
-                    "private_reads": 0,
-                    "production_registry_writes": 0,
-                    "provider_calls": 0,
-                    "real_contracts": 0,
-                },
-            )
+            self.assertEqual(windows.effect_measurement_status, "unmeasured")
+            self.assertIsNone(windows.effect_counts)
 
 
 if __name__ == "__main__":

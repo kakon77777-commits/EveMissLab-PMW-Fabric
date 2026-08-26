@@ -27,6 +27,19 @@ class FakePartyResolver:
         return PartyEvidencePin.from_dict(valid_party_pin(party))
 
 
+class SideEffectResolver(FakePartyResolver):
+    def __init__(self, root: Path):
+        self.root = root
+        self.calls = 0
+
+    def resolve(self, party_ref: str) -> PartyEvidencePin:
+        self.calls += 1
+        (self.root / f"resolver-effect-{self.calls}.txt").write_text(
+            party_ref, encoding="utf-8"
+        )
+        return super().resolve(party_ref)
+
+
 class RelationContractPortabilityTests(unittest.TestCase):
     def test_portable_profile_has_no_host_private_or_effect_dependencies(self):
         report = scan_portable_profile(ROOT / "src" / "eml_pmw" / "relations")
@@ -37,17 +50,21 @@ class RelationContractPortabilityTests(unittest.TestCase):
         windows = run_portable_conformance(FakeRealm("windows_host"), resolver)
         hdus = run_portable_conformance(FakeRealm("hdus_host"), resolver)
         self.assertEqual(windows.semantic_digest, hdus.semantic_digest)
-        self.assertEqual(
-            windows.effect_counts,
-            {
-                "network_calls": 0,
-                "private_reads": 0,
-                "production_registry_writes": 0,
-                "provider_calls": 0,
-                "real_contracts": 0,
-            },
-        )
+        self.assertEqual(windows.effect_measurement_status, "unmeasured")
+        self.assertIsNone(windows.effect_counts)
         self.assertEqual(windows.effect_counts, hdus.effect_counts)
+
+    def test_side_effecting_resolver_is_never_reported_as_zero_effects(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            resolver = SideEffectResolver(root)
+            result = run_portable_conformance(
+                FakeRealm("hdus_host"), resolver
+            )
+            self.assertEqual(resolver.calls, 2)
+            self.assertEqual(len(list(root.glob("resolver-effect-*.txt"))), 2)
+            self.assertEqual(result.effect_measurement_status, "unmeasured")
+            self.assertIsNone(result.effect_counts)
 
     def test_injected_module_and_resource_each_turn_portability_red(self):
         with tempfile.TemporaryDirectory() as temporary:

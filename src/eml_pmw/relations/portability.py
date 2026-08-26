@@ -36,15 +36,6 @@ RESOURCE_PATTERNS = (
     ("private_residence", re.compile(r"(?i)(?:AI_RESIDENCE|private[ _-]*Residence)")),
     ("p2_p3", re.compile(r"(?i)fabric_payload_class\s*[:=]\s*[\"']?P[23]\b")),
 )
-EFFECT_COUNTS = {
-    "network_calls": 0,
-    "private_reads": 0,
-    "production_registry_writes": 0,
-    "provider_calls": 0,
-    "real_contracts": 0,
-}
-
-
 @dataclass(frozen=True)
 class PortabilityFinding:
     code: str
@@ -61,7 +52,8 @@ class PortabilityReport:
 class ConformanceResult:
     realm_kind: str
     semantic_digest: str
-    effect_counts: dict[str, int]
+    effect_measurement_status: str
+    effect_counts: dict[str, int] | None
 
 
 class PartyResolver(Protocol):
@@ -229,4 +221,4 @@ def run_portable_conformance(
         "execution_status": "not_observed",
         "not_claimed": ["host_identity", "provider_execution", "real_contract"],
     })
-    return ConformanceResult(str(realm_kind), semantic_digest, dict(EFFECT_COUNTS))
+    return ConformanceResult(str(realm_kind), semantic_digest, "unmeasured", None)
