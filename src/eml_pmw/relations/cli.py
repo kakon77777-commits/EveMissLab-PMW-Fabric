@@ -8,8 +8,9 @@ from eml_wake.canonical import canonical_bytes, loads_strict
 from eml_wake.errors import WakeError
 
 from .contracts import load_relation_contract
+from .canonical import object_content_digest
 from .errors import RelationContractError
-from .events import RelationContractEvent
+from .events import RelationContractEvent, validate_event_object_binding
 from .models_authority import (
     AuthorityCandidate,
     AuthorityEvaluationReceipt,
@@ -19,7 +20,7 @@ from .models_authority import (
     RepresentationGrant,
 )
 from .models_common import PartyEvidencePin
-from .models_relation import RelationVersion
+from .models_relation import ContractVersion, RelationVersion
 from .policy import ActivationPolicy
 from .projector import explain_subject, rebuild_projection
 from .store import RelationContractStore
@@ -84,7 +85,12 @@ def _read_object(path: str | Path) -> dict[str, Any]:
     return value
 
 
-def _validate_value(kind: str, value: dict[str, Any]) -> None:
+def _validate_value(
+    kind: str,
+    value: dict[str, Any],
+    *,
+    policy: ActivationPolicy | None = None,
+) -> None:
     schema_name = KIND_CONTRACTS.get(kind)
     if schema_name is None:
         raise RelationContractError("object_kind_invalid", kind)
@@ -92,6 +98,13 @@ def _validate_value(kind: str, value: dict[str, Any]) -> None:
         jsonschema.validate(value, load_relation_contract(schema_name))
     except jsonschema.ValidationError as error:
         raise RelationContractError("schema_invalid", kind) from error
+    if kind == "contract":
+        if value.get("content_digest") != object_content_digest(value):
+            raise RelationContractError("content_digest_mismatch", "contract")
+        if policy is None:
+            raise RelationContractError("contract_policy_unavailable", "contract")
+        ContractVersion.from_dict(value, policy=policy)
+        return
     validator = SEMANTIC_VALIDATORS.get(kind)
     if validator is not None:
         validator(value)
@@ -120,6 +133,8 @@ def _run(handler, args) -> int:
         return code
     except RelationContractError as error:
         code = 1 if error.code.startswith("input_") else 2
+        if error.code == "contract_policy_unavailable":
+            code = 4
         if error.code == "store_not_projectable" and error.message in {
             "empty",
             "repairable_index_gap",
@@ -144,7 +159,12 @@ def _run(handler, args) -> int:
 
 
 def cmd_validate(args) -> int:
-    _validate_value(args.kind, _read_object(args.file))
+    policy = (
+        None
+        if args.policy is None
+        else ActivationPolicy.from_dict(_read_object(args.policy))
+    )
+    _validate_value(args.kind, _read_object(args.file), policy=policy)
     _emit({"reason_codes": [], "status": "valid"})
     return 0
 
@@ -152,8 +172,19 @@ def cmd_validate(args) -> int:
 def cmd_append(args) -> int:
     object_value = _read_object(args.object)
     kind = _infer_kind(object_value)
-    _validate_value(kind, object_value)
+    policy = (
+        None
+        if args.policy is None
+        else ActivationPolicy.from_dict(_read_object(args.policy))
+    )
+    _validate_value(kind, object_value, policy=policy)
     event = RelationContractEvent.from_dict(_read_object(args.event))
+    try:
+        validate_event_object_binding(event, object_value)
+    except RelationContractError as error:
+        raise RelationContractError(
+            "event_object_pair_mismatch", event.event_id
+        ) from error
     store = RelationContractStore(args.root)
     object_result = store.put_object(kind, object_value)
     event_result = store.append_event(event)
@@ -175,6 +206,24 @@ def cmd_append(args) -> int:
 def cmd_project(args) -> int:
     store = RelationContractStore(args.root)
     verification = store.verify()
+    if verification.status == "invalid":
+        _emit(
+            {
+                "projection": None,
+                "reason_codes": list(verification.error_codes),
+                "status": "rejected",
+            }
+        )
+        return 2
+    if verification.status == "repairable_index_gap":
+        _emit(
+            {
+                "projection": None,
+                "reason_codes": ["repairable_index_gap"],
+                "status": "indeterminate",
+            }
+        )
+        return 4
     if verification.status == "empty":
         _emit(
             {
@@ -238,12 +287,14 @@ def register_subcommands(subparsers) -> None:
     parser = subparsers.add_parser("relation-contract-validate")
     parser.add_argument("file")
     parser.add_argument("--kind", choices=sorted(KIND_CONTRACTS), required=True)
+    parser.add_argument("--policy")
     parser.set_defaults(func=lambda args: _run(cmd_validate, args))
 
     parser = subparsers.add_parser("relation-contract-append")
     parser.add_argument("--root", required=True)
     parser.add_argument("--object", required=True)
     parser.add_argument("--event", required=True)
+    parser.add_argument("--policy")
     parser.set_defaults(func=lambda args: _run(cmd_append, args))
 
     parser = subparsers.add_parser("relation-contract-project")

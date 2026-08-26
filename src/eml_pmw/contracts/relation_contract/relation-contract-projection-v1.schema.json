@@ -205,7 +205,7 @@
         "evaluator_implementation_version": {"type": "string", "minLength": 1},
         "evaluator_policy_version": {"type": "string", "minLength": 1},
         "resolution_status": {"enum": ["authorized", "approval-required", "multi-party-required", "denied"]},
-        "receipt_currency": {"const": "recorded_not_revalidated"}
+        "receipt_currency": {"enum": ["unobserved", "recorded_not_revalidated"]}
       }
     }
   }

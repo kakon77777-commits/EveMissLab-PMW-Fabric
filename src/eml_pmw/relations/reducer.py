@@ -5,7 +5,11 @@ from typing import Any, Iterable, Mapping
 
 from .canonical import object_content_digest
 from .errors import RelationContractError
-from .events import EVENT_RULES, RelationContractEvent
+from .events import (
+    EVENT_RULES,
+    RelationContractEvent,
+    validate_event_object_binding,
+)
 from .models_authority import (
     GrantAuthorityEvidence,
     PartyAcceptance,
@@ -511,13 +515,9 @@ def _verified_object(
     event: RelationContractEvent, objects: Mapping[str, dict[str, Any]]
 ) -> dict[str, Any]:
     obj = objects.get(event.object_digest)
-    if (
-        obj is None
-        or _object_digest(obj) != event.object_digest
-    ):
+    if obj is None:
         raise RelationContractError("object_digest_mismatch", event.event_id)
-    if _object_ref(obj) != event.object_ref:
-        raise RelationContractError("object_ref_invalid", event.event_id)
+    validate_event_object_binding(event, obj)
     return obj
 
 

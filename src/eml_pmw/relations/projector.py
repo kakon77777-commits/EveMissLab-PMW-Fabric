@@ -210,10 +210,9 @@ def _build_projection(
     for digest, value in _objects_with_schema(
         objects, "arcp/authority-evaluation-receipt/0.1"
     ):
+        evaluation_state = lifecycle.evaluation_states.get(digest, "unobserved")
         authority_evaluations[digest] = {
-            "projection_state": lifecycle.evaluation_states.get(
-                digest, "unobserved"
-            ),
+            "projection_state": evaluation_state,
             "candidate_ref": value["candidate_ref"],
             "candidate_digest": value["candidate_digest"],
             "evaluator_profile_id": value["evaluator_profile_id"],
@@ -222,7 +221,11 @@ def _build_projection(
             ],
             "evaluator_policy_version": value["evaluator_policy_version"],
             "resolution_status": value["authority_resolution"]["status"],
-            "receipt_currency": "recorded_not_revalidated",
+            "receipt_currency": (
+                "recorded_not_revalidated"
+                if evaluation_state == "recorded"
+                else "unobserved"
+            ),
         }
 
     value = {
@@ -280,15 +283,30 @@ def explain_subject(store: Any, subject_ref: str) -> dict[str, Any]:
         (digest, value)
         for digest, value in projection["authority_candidates"].items()
         if value["contract_ref"] == subject_ref
-        and value["projection_state"] != "invalidated"
+        and value["projection_state"] == "recorded"
     ]
+    candidate_selection = (
+        "none"
+        if not candidate_items
+        else "single"
+        if len(candidate_items) == 1
+        else "ambiguous"
+    )
     candidate_digest = candidate_items[0][0] if len(candidate_items) == 1 else None
     candidate = candidate_items[0][1] if len(candidate_items) == 1 else None
     receipt_items = [
         (digest, value)
         for digest, value in projection["authority_evaluations"].items()
         if candidate_digest is not None and value["candidate_digest"] == candidate_digest
+        and value["projection_state"] == "recorded"
     ]
+    receipt_selection = (
+        "none"
+        if not receipt_items
+        else "single"
+        if len(receipt_items) == 1
+        else "ambiguous"
+    )
     receipt_digest = receipt_items[0][0] if len(receipt_items) == 1 else None
     receipt = receipt_items[0][1] if len(receipt_items) == 1 else None
 
@@ -328,11 +346,13 @@ def explain_subject(store: Any, subject_ref: str) -> dict[str, Any]:
             [] if candidate is None else candidate["party_evidence_pin_refs"]
         ),
         "authority_candidate_digest": candidate_digest,
+        "authority_candidate_selection_status": candidate_selection,
         "candidate_status": None if candidate is None else candidate["candidate_status"],
         "activation_reason_codes": (
             [] if candidate is None else candidate["reason_codes"]
         ),
         "authority_evaluation_receipt_digest": receipt_digest,
+        "authority_evaluation_selection_status": receipt_selection,
         "evaluator_profile_id": (
             None if receipt is None else receipt["evaluator_profile_id"]
         ),

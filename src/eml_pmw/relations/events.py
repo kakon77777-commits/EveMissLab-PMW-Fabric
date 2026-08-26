@@ -6,6 +6,7 @@ from typing import Any, Callable
 
 from eml_wake.canonical import canonical_bytes
 
+from .canonical import object_content_digest
 from .errors import RelationContractError
 from .models_common import (
     require_exact,
@@ -127,6 +128,24 @@ EVENT_RULES = {
     "authority_evaluation.recorded": _rule("evaluation", ("eligible",), False, "evaluator", ("candidate_digest",), _evaluation_effect),
 }
 EVENT_KINDS = frozenset(EVENT_RULES)
+OBJECT_SCHEMA_BY_RULE_KIND = {
+    "relation": "arcp/relation-version/0.1",
+    "contract": "arcp/contract-version/0.1",
+    "acceptance": "arcp/party-acceptance/0.1",
+    "representation": "arcp/representation-grant/0.1",
+    "commitment": "arcp/commitment/0.1",
+    "candidate": "arcp/authority-candidate/0.1",
+    "evaluation": "arcp/authority-evaluation-receipt/0.1",
+}
+OBJECT_REF_FIELDS = {
+    "arcp/relation-version/0.1": "relation_id",
+    "arcp/contract-version/0.1": "contract_id",
+    "arcp/party-acceptance/0.1": "acceptance_id",
+    "arcp/representation-grant/0.1": "representation_grant_id",
+    "arcp/commitment/0.1": "commitment_id",
+    "arcp/authority-candidate/0.1": "candidate_id",
+    "arcp/authority-evaluation-receipt/0.1": "receipt_digest",
+}
 AUTHORITY_REQUIRED_KINDS = frozenset(
     kind for kind, rule in EVENT_RULES.items() if rule.authority_mode == "required"
 )
@@ -264,3 +283,28 @@ class RelationContractEvent:
             self.to_dict()
         )
         return f"sha256:{EVENT_CANON}:" + hashlib.sha256(body).hexdigest()
+
+
+def validate_event_object_binding(
+    event: RelationContractEvent, value: dict[str, Any]
+) -> None:
+    expected_schema = OBJECT_SCHEMA_BY_RULE_KIND[
+        EVENT_RULES[event.event_kind].object_kind
+    ]
+    if value.get("schema") != expected_schema:
+        raise RelationContractError(
+            "event_object_kind_mismatch", event.event_id
+        )
+    reference_field = OBJECT_REF_FIELDS[expected_schema]
+    digest_field = (
+        "receipt_digest"
+        if expected_schema == "arcp/authority-evaluation-receipt/0.1"
+        else "content_digest"
+    )
+    if value.get(reference_field) != event.object_ref:
+        raise RelationContractError("object_ref_invalid", event.event_id)
+    if (
+        value.get(digest_field) != event.object_digest
+        or object_content_digest(value, digest_field) != event.object_digest
+    ):
+        raise RelationContractError("object_digest_mismatch", event.event_id)

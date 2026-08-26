@@ -4,9 +4,11 @@ from concurrent.futures import ProcessPoolExecutor
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 
+from eml_wake.canonical import canonical_bytes, loads_strict
 from eml_pmw.relations.errors import RelationContractError
 from eml_pmw.relations.events import RelationContractEvent
 from eml_pmw.relations.store import RelationContractStore
@@ -15,6 +17,7 @@ from tests.relation_contract_helpers import (
     mutate_and_rebind,
     valid_contract_version,
     valid_relation_contract_event,
+    valid_relation_version,
 )
 
 
@@ -102,6 +105,46 @@ class RelationContractStoreTests(unittest.TestCase):
             store.append_event(event)
         self.assertEqual(store.events(), ())
 
+    def test_event_kind_must_match_referenced_object_before_publication(self):
+        store = RelationContractStore(self.root)
+        relation = valid_relation_version(
+            relation_class="descriptive", acceptance_rule="none"
+        )
+        store.put_object("relation", relation)
+        event = RelationContractEvent.from_dict(
+            valid_relation_contract_event(
+                "contract.drafted",
+                relation,
+                event_id="event:store:wrong-object-kind",
+            )
+        )
+
+        with assert_relation_error(self, "event_object_kind_mismatch"):
+            store.append_event(event)
+        self.assertEqual(store.events(), ())
+
+    def test_verify_rejects_persisted_event_object_kind_mismatch(self):
+        store = RelationContractStore(self.root)
+        relation = valid_relation_version(
+            relation_class="descriptive", acceptance_rule="none"
+        )
+        store.put_object("relation", relation)
+        event = RelationContractEvent.from_dict(
+            valid_relation_contract_event(
+                "contract.drafted",
+                relation,
+                event_id="event:store:persisted-wrong-kind",
+            )
+        )
+        event_path = store._event_path(event.event_id)
+        event_path.write_bytes(canonical_bytes(store._event_bundle(event)))
+        index_path = store._event_index_path(event.event_digest)
+        index_path.write_bytes(canonical_bytes(store._event_index(event, event_path)))
+
+        verification = store.verify()
+        self.assertEqual(verification.status, "invalid")
+        self.assertIn("event_object_kind_mismatch", verification.error_codes)
+
     def test_event_id_collision_quarantines_loser_and_duplicate_is_idempotent(self):
         store = RelationContractStore(self.root)
         contract = valid_contract_version()
@@ -113,6 +156,18 @@ class RelationContractStoreTests(unittest.TestCase):
         )
         self.assertEqual(store.append_event(event).status, "created")
         self.assertEqual(store.append_event(event).status, "existing")
+        duplicate_paths = list((self.root / "duplicates").glob("*.json"))
+        self.assertEqual(len(duplicate_paths), 1)
+        first_duplicate = duplicate_paths[0].read_bytes()
+        duplicate = loads_strict(first_duplicate)
+        self.assertEqual(
+            duplicate["schema"],
+            "arcp/relation-contract-duplicate-delivery/0.1",
+        )
+        self.assertEqual(duplicate["event_id"], event.event_id)
+        self.assertEqual(duplicate["event_digest"], event.event_digest)
+        self.assertEqual(store.append_event(event).status, "existing")
+        self.assertEqual(duplicate_paths[0].read_bytes(), first_duplicate)
 
         changed = RelationContractEvent.from_dict(
             valid_relation_contract_event(
@@ -125,6 +180,26 @@ class RelationContractStoreTests(unittest.TestCase):
         with assert_relation_error(self, "event_id_collision"):
             store.append_event(changed)
         self.assertEqual(len(store.events()), 1)
+
+    def test_tampered_duplicate_evidence_turns_verification_red(self):
+        store = RelationContractStore(self.root)
+        contract = valid_contract_version()
+        store.put_object("contract", contract)
+        event = RelationContractEvent.from_dict(
+            valid_relation_contract_event(
+                "contract.drafted", contract, event_id="event:store:duplicate-tamper"
+            )
+        )
+        store.append_event(event)
+        store.append_event(event)
+        duplicate_path = next((self.root / "duplicates").glob("*.json"))
+        value = loads_strict(duplicate_path.read_bytes())
+        value["event_digest"] = "sha256:wrong"
+        duplicate_path.write_bytes(canonical_bytes(value))
+
+        self.assertIn("duplicate_evidence_invalid", store.verify().error_codes)
+        with assert_relation_error(self, "duplicate_evidence_invalid"):
+            store.append_event(event)
 
     def test_corrupt_parent_is_rejected_before_child_publication(self):
         store = RelationContractStore(self.root)
@@ -168,6 +243,52 @@ class RelationContractStoreTests(unittest.TestCase):
         self.assertEqual(repaired.created_indexes, 1)
         self.assertEqual(reopened.verify().status, "internally_consistent")
         self.assertEqual(reopened.get_object(value["content_digest"]), value)
+
+    def test_object_index_cannot_escape_store_root(self):
+        store = RelationContractStore(self.root)
+        contract = valid_contract_version()
+        result = store.put_object("contract", contract)
+        outside = self.root.parent / "outside"
+        outside.mkdir()
+        outside_bundle = outside / Path(result.bundle_path).name
+        shutil.copyfile(result.bundle_path, outside_bundle)
+        Path(result.bundle_path).unlink()
+        index = loads_strict(Path(result.index_path).read_bytes())
+        index["bundle_path"] = f"../outside/{outside_bundle.name}"
+        Path(result.index_path).write_bytes(canonical_bytes(index))
+
+        with assert_relation_error(self, "storage_path_refused"):
+            store.get_object(contract["content_digest"])
+        self.assertIn("object_index_invalid", store.verify().error_codes)
+
+    def test_object_index_path_must_be_canonical_relative_posix(self):
+        store = RelationContractStore(self.root)
+        contract = valid_contract_version()
+        result = store.put_object("contract", contract)
+        index = loads_strict(Path(result.index_path).read_bytes())
+        index["bundle_path"] = index["bundle_path"].replace(
+            "objects/", "objects//", 1
+        )
+        Path(result.index_path).write_bytes(canonical_bytes(index))
+
+        with assert_relation_error(self, "storage_path_refused"):
+            store.get_object(contract["content_digest"])
+
+    def test_post_construction_reparse_swap_is_refused(self):
+        store = RelationContractStore(self.root)
+        contract = valid_contract_version()
+        result = store.put_object("contract", contract)
+        contract_dir = Path(result.bundle_path).parent
+        outside = self.root.parent / "reparse-target"
+        contract_dir.rename(outside)
+        try:
+            contract_dir.symlink_to(outside, target_is_directory=True)
+        except OSError:
+            outside.rename(contract_dir)
+            self.skipTest("directory symlink creation is not permitted")
+
+        with assert_relation_error(self, "storage_path_refused"):
+            store.get_object(contract["content_digest"])
 
     def test_external_head_distinguishes_internal_consistency_from_checkpoint(self):
         store = RelationContractStore(self.root)

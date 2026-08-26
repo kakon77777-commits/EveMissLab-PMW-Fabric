@@ -3,7 +3,9 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 import hashlib
+import os
 from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Any, Callable, Mapping
 
 from eml_wake.canonical import canonical_bytes, loads_strict
@@ -12,7 +14,7 @@ from eml_wake.filesystem import _verify_no_reparse, publish_no_replace
 
 from .canonical import object_content_digest, profile_digest
 from .errors import RelationContractError
-from .events import RelationContractEvent
+from .events import RelationContractEvent, validate_event_object_binding
 
 
 EXPECTED_TOP_LEVEL = {"objects", "events", "indexes", "duplicates", "quarantine"}
@@ -178,6 +180,53 @@ class RelationContractStore:
         if self.fault_injector is not None:
             self.fault_injector(stage)
 
+    def _safe_store_path(self, path: Path, *, must_exist: bool) -> Path:
+        root = Path(os.path.abspath(self.root))
+        target = Path(os.path.abspath(path))
+        try:
+            target.relative_to(root)
+            resolved_root = root.resolve(strict=True)
+            resolved_target = target.resolve(strict=must_exist)
+            resolved_target.relative_to(resolved_root)
+            checked = target if target.exists() else target.parent
+            while checked != root and not checked.exists():
+                checked = checked.parent
+            _verify_no_reparse(root, checked)
+        except (OSError, ValueError, WakeError) as error:
+            raise RelationContractError("storage_path_refused", str(path)) from error
+        if must_exist and not target.is_file():
+            raise RelationContractError("storage_path_refused", str(path))
+        return target
+
+    def _read_store_record(self, path: Path) -> dict[str, Any]:
+        return _read_canonical(self._safe_store_path(path, must_exist=True))
+
+    def _publish_store_record(self, path: Path, value: dict[str, Any]) -> None:
+        target = self._safe_store_path(path, must_exist=False)
+        _publish(target, value)
+
+    def _bundle_path_from_index(
+        self, value: Mapping[str, Any], *, expected_kind: str
+    ) -> Path:
+        raw = value.get("bundle_path")
+        if not isinstance(raw, str) or not raw or "\\" in raw:
+            raise RelationContractError("storage_path_refused", str(raw))
+        pure = PurePosixPath(raw)
+        parts = pure.parts
+        if (
+            pure.is_absolute()
+            or pure.as_posix() != raw
+            or len(parts) != 3
+            or parts[0] != "objects"
+            or parts[1] != expected_kind
+            or parts[2] in {"", ".", ".."}
+            or any(part in {"", ".", ".."} for part in parts)
+        ):
+            raise RelationContractError("storage_path_refused", raw)
+        return self._safe_store_path(
+            self.root.joinpath(*parts), must_exist=True
+        )
+
     def _identity_tuple(self, kind: str, value: Mapping[str, Any]) -> tuple[Any, ...]:
         if kind in VERSIONED_IDS:
             fields = VERSIONED_IDS[kind]
@@ -218,13 +267,20 @@ class RelationContractStore:
     def _event_index_path(self, digest: str) -> Path:
         return self.event_index_dir / f"{_hash_text(digest)}.json"
 
+    def _duplicate_path(self, event: RelationContractEvent) -> Path:
+        identity = f"{event.event_id}\x00{event.event_digest}"
+        return self.duplicates_dir / f"{_hash_text(identity)}.json"
+
     def _quarantine(self, code: str, record: dict[str, Any]) -> None:
         value = {"schema": "arcp/relation-contract-quarantine/0.1", "code": code, **record}
         path = self.quarantine_dir / f"{_hash_value(value)}.json"
         try:
-            _publish(path, value)
+            self._publish_store_record(path, value)
         except RelationContractError as error:
-            if error.code != "immutable_file_exists" or _read_canonical(path) != value:
+            if (
+                error.code != "immutable_file_exists"
+                or self._read_store_record(path) != value
+            ):
                 raise
 
     def _object_bundle(
@@ -272,15 +328,91 @@ class RelationContractStore:
             "bundle_path": path.relative_to(self.root).as_posix(),
         }
 
+    def _duplicate_evidence(
+        self, event: RelationContractEvent, event_path: Path
+    ) -> dict[str, Any]:
+        value = {
+            "schema": "arcp/relation-contract-duplicate-delivery/0.1",
+            "event_id": event.event_id,
+            "event_digest": event.event_digest,
+            "event_bundle_path": event_path.relative_to(self.root).as_posix(),
+            "duplicate_evidence_digest": "",
+        }
+        value["duplicate_evidence_digest"] = profile_digest(
+            {
+                key: item
+                for key, item in value.items()
+                if key != "duplicate_evidence_digest"
+            }
+        )
+        return value
+
+    def _read_duplicate_evidence(self, path: Path) -> dict[str, Any]:
+        value = self._read_store_record(path)
+        if (
+            set(value)
+            != {
+                "schema",
+                "event_id",
+                "event_digest",
+                "event_bundle_path",
+                "duplicate_evidence_digest",
+            }
+            or value["schema"]
+            != "arcp/relation-contract-duplicate-delivery/0.1"
+        ):
+            raise RelationContractError("duplicate_evidence_invalid", str(path))
+        expected_digest = profile_digest(
+            {
+                key: item
+                for key, item in value.items()
+                if key != "duplicate_evidence_digest"
+            }
+        )
+        expected_name = _hash_text(
+            f"{value['event_id']}\x00{value['event_digest']}"
+        )
+        expected_bundle = f"events/{_hash_text(str(value['event_id']))}.json"
+        if (
+            value["duplicate_evidence_digest"] != expected_digest
+            or path.name != f"{expected_name}.json"
+            or value["event_bundle_path"] != expected_bundle
+        ):
+            raise RelationContractError("duplicate_evidence_invalid", str(path))
+        return value
+
+    def _record_duplicate(
+        self, event: RelationContractEvent, event_path: Path
+    ) -> None:
+        expected = self._duplicate_evidence(event, event_path)
+        path = self._duplicate_path(event)
+        if path.exists():
+            if self._read_duplicate_evidence(path) != expected:
+                raise RelationContractError("duplicate_evidence_invalid", event.event_id)
+            return
+        try:
+            self._publish_store_record(path, expected)
+        except RelationContractError as error:
+            if (
+                error.code != "immutable_file_exists"
+                or self._read_duplicate_evidence(path) != expected
+            ):
+                raise RelationContractError(
+                    "duplicate_evidence_invalid", event.event_id
+                ) from error
+
     def _publish_index(self, path: Path, value: dict[str, Any], code: str) -> None:
         if path.exists():
-            if _read_canonical(path) != value:
+            if self._read_store_record(path) != value:
                 raise RelationContractError(code, str(path))
             return
         try:
-            _publish(path, value)
+            self._publish_store_record(path, value)
         except RelationContractError as error:
-            if error.code != "immutable_file_exists" or _read_canonical(path) != value:
+            if (
+                error.code != "immutable_file_exists"
+                or self._read_store_record(path) != value
+            ):
                 raise RelationContractError(code, str(path)) from error
 
     def put_object(self, kind: str, value: dict[str, Any]) -> StoredObjectResult:
@@ -308,7 +440,7 @@ class RelationContractStore:
                 raise RelationContractError("object_identity_collision", str(identity))
         else:
             try:
-                _publish(path, bundle)
+                self._publish_store_record(path, bundle)
             except RelationContractError as error:
                 if error.code != "immutable_file_exists":
                     raise
@@ -346,7 +478,8 @@ class RelationContractStore:
     def append_event(self, event: RelationContractEvent) -> AppendEventResult:
         if not isinstance(event, RelationContractEvent):
             raise RelationContractError("event_type_invalid", "append")
-        self.get_object(event.object_digest)
+        event_object = self.get_object(event.object_digest)
+        validate_event_object_binding(event, event_object)
         for parent in event.causal_parents:
             parent_path = self._event_path(parent)
             if not parent_path.is_file():
@@ -379,7 +512,7 @@ class RelationContractStore:
                 raise RelationContractError("event_id_collision", event.event_id)
         else:
             try:
-                _publish(path, bundle)
+                self._publish_store_record(path, bundle)
             except RelationContractError as error:
                 if error.code != "immutable_file_exists":
                     raise
@@ -401,6 +534,8 @@ class RelationContractStore:
                     raise RelationContractError(
                         "event_id_collision", event.event_id
                     ) from error
+        if status == "existing":
+            self._record_duplicate(event, path)
         index_path = self._event_index_path(event.event_digest)
         if status == "created":
             self._fault("after_event_bundle")
@@ -414,7 +549,7 @@ class RelationContractStore:
         )
 
     def _read_object_bundle(self, path: Path) -> dict[str, Any]:
-        value = _read_canonical(path)
+        value = self._read_store_record(path)
         if (
             set(value)
             != {
@@ -439,7 +574,7 @@ class RelationContractStore:
         return value
 
     def _read_event_bundle(self, path: Path) -> dict[str, Any]:
-        value = _read_canonical(path)
+        value = self._read_store_record(path)
         if (
             set(value)
             != {"schema", "event_id", "event_digest", "canonical_event", "bundle_digest"}
@@ -472,15 +607,24 @@ class RelationContractStore:
     def get_object(self, content_digest: str) -> dict[str, Any]:
         index_path = self._object_index_path(content_digest)
         if index_path.is_file():
-            index = _read_canonical(index_path)
+            index = self._read_store_record(index_path)
             if (
                 index.get("schema") != "arcp/relation-contract-object-index/0.1"
                 or index.get("content_digest") != content_digest
+                or index.get("kind") not in set(VERSIONED_IDS) | set(SINGLE_IDS)
             ):
                 raise RelationContractError("object_index_invalid", content_digest)
-            path = self.root.joinpath(*Path(index["bundle_path"]).parts)
+            path = self._bundle_path_from_index(
+                index, expected_kind=str(index["kind"])
+            )
             bundle = self._read_object_bundle(path)
-            if bundle["content_digest"] != content_digest:
+            if (
+                bundle["content_digest"] != content_digest
+                or bundle["kind"] != index["kind"]
+                or path != Path(os.path.abspath(self._object_path(
+                    bundle["kind"], tuple(bundle["identity_tuple"])
+                )))
+            ):
                 raise RelationContractError("object_index_invalid", content_digest)
             return deepcopy(bundle["canonical_object"])
         objects = self.objects_by_digest()
@@ -523,7 +667,7 @@ class RelationContractStore:
                 missing += 1
             else:
                 try:
-                    if _read_canonical(index_path) != expected:
+                    if self._read_store_record(index_path) != expected:
                         errors.append("object_index_invalid")
                 except RelationContractError:
                     errors.append("object_index_invalid")
@@ -537,25 +681,42 @@ class RelationContractStore:
                 missing += 1
             else:
                 try:
-                    if _read_canonical(index_path) != expected:
+                    if self._read_store_record(index_path) != expected:
                         errors.append("event_index_invalid")
                 except RelationContractError:
                     errors.append("event_index_invalid")
         for path in sorted(self.object_index_dir.glob("*.json")):
             try:
-                index = _read_canonical(path)
+                index = self._read_store_record(path)
                 if index.get("content_digest") not in object_bundles:
                     errors.append("object_index_invalid")
             except RelationContractError:
                 errors.append("object_index_invalid")
         for path in sorted(self.event_index_dir.glob("*.json")):
             try:
-                index = _read_canonical(path)
+                index = self._read_store_record(path)
                 if index.get("event_digest") not in event_bundles:
                     errors.append("event_index_invalid")
             except RelationContractError:
                 errors.append("event_index_invalid")
         return errors, missing
+
+    def _duplicate_errors(
+        self, events_by_id: Mapping[str, RelationContractEvent]
+    ) -> list[str]:
+        errors: list[str] = []
+        entries = sorted(self.duplicates_dir.iterdir())
+        if any(not path.is_file() or path.suffix != ".json" for path in entries):
+            errors.append("duplicate_evidence_invalid")
+        for path in (item for item in entries if item.is_file() and item.suffix == ".json"):
+            try:
+                value = self._read_duplicate_evidence(path)
+                event = events_by_id.get(str(value["event_id"]))
+                if event is None or event.event_digest != value["event_digest"]:
+                    errors.append("duplicate_evidence_invalid")
+            except RelationContractError:
+                errors.append("duplicate_evidence_invalid")
+        return errors
 
     def verify(self, expected_head: str | None = None) -> StoreVerification:
         errors: list[str] = []
@@ -574,8 +735,16 @@ class RelationContractStore:
             for event in events:
                 if event.object_digest not in objects:
                     errors.append("event_object_missing")
+                else:
+                    try:
+                        validate_event_object_binding(
+                            event, objects[event.object_digest]
+                        )
+                    except RelationContractError as error:
+                        errors.append(error.code)
                 if any(parent not in by_id for parent in event.causal_parents):
                     errors.append("event_parent_missing")
+            errors.extend(self._duplicate_errors(by_id))
             index_errors, missing_indexes = self._index_errors()
             errors.extend(index_errors)
         except RelationContractError as error:
@@ -618,7 +787,7 @@ class RelationContractStore:
             bundle = self._read_object_bundle(path)
             index_path = self._object_index_path(bundle["content_digest"])
             if not index_path.exists():
-                _publish(
+                self._publish_store_record(
                     index_path,
                     self._object_index(bundle["kind"], bundle["content_digest"], path),
                 )
@@ -628,6 +797,6 @@ class RelationContractStore:
             event = RelationContractEvent.from_dict(bundle["canonical_event"])
             index_path = self._event_index_path(event.event_digest)
             if not index_path.exists():
-                _publish(index_path, self._event_index(event, path))
+                self._publish_store_record(index_path, self._event_index(event, path))
                 created += 1
         return RepairResult(created)

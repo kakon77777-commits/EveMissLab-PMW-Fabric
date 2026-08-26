@@ -180,6 +180,77 @@ class RelationContractProjectionTests(unittest.TestCase):
         self.assertIsNotNone(value["authority_evaluation_receipt_digest"])
         self.assertNotIn("authorized", value)
 
+    def test_explain_does_not_upgrade_object_only_candidate_or_receipt(self):
+        candidate_store, contract, _, candidate = active_store(
+            self.root / "object-only-candidate",
+            include_candidate=False,
+            include_receipt=False,
+        )
+        candidate_store.put_object("authority_candidate", candidate)
+        candidate_explain = explain_subject(
+            candidate_store, contract["contract_id"]
+        )
+        self.assertEqual(
+            candidate_explain["authority_candidate_selection_status"], "none"
+        )
+        self.assertIsNone(candidate_explain["authority_candidate_digest"])
+
+        receipt_store, contract, _, _ = active_store(
+            self.root / "object-only-receipt",
+            include_candidate=True,
+            include_receipt=False,
+        )
+        receipt = valid_evaluation_receipt()
+        receipt_store.put_object("authority_evaluation", receipt)
+        inventory = loads_strict(rebuild_projection(receipt_store))[
+            "authority_evaluations"
+        ][receipt["receipt_digest"]]
+        self.assertEqual(inventory["projection_state"], "unobserved")
+        self.assertEqual(inventory["receipt_currency"], "unobserved")
+        receipt_explain = explain_subject(receipt_store, contract["contract_id"])
+        self.assertEqual(
+            receipt_explain["authority_evaluation_selection_status"], "none"
+        )
+        self.assertIsNone(
+            receipt_explain["authority_evaluation_receipt_digest"]
+        )
+        self.assertIsNone(receipt_explain["receipt_currency"])
+
+    def test_explain_marks_multiple_recorded_candidates_ambiguous(self):
+        store, contract, _, first = active_store(
+            self.root / "ambiguous-candidates",
+            include_candidate=True,
+            include_receipt=False,
+        )
+        second = mutate_and_rebind(
+            first,
+            {
+                "candidate_id": "candidate:fixture:inspect:2",
+                "action_intent_ref": "action:fixture:inspect:2",
+            },
+        )
+        store.put_object("authority_candidate", second)
+        store.append_event(
+            RelationContractEvent.from_dict(
+                valid_relation_contract_event(
+                    "authority_candidate.created",
+                    second,
+                    event_id="event:candidate:projection:2",
+                    subject_ref=contract["contract_id"],
+                    parents=("event:candidate:projection",),
+                )
+            )
+        )
+
+        value = explain_subject(store, contract["contract_id"])
+        self.assertEqual(
+            value["authority_candidate_selection_status"], "ambiguous"
+        )
+        self.assertIsNone(value["authority_candidate_digest"])
+        self.assertEqual(
+            value["authority_evaluation_selection_status"], "none"
+        )
+
     def test_evaluation_event_uses_receipt_digest_as_object_identity(self):
         store, contract, _, _ = active_store(self.root / "evaluation")
         value = loads_strict(rebuild_projection(store))
@@ -202,6 +273,24 @@ class RelationContractProjectionTests(unittest.TestCase):
         )
         source = ProjectionFixtureSource([*parsed[:-1], changed], objects)
         with assert_relation_error(self, "object_digest_mismatch"):
+            rebuild_projection(source)
+
+    def test_projection_types_event_object_kind_mismatch(self):
+        relation = mutate_and_rebind(
+            valid_relation_version(),
+            {"relation_class": "descriptive", "acceptance_rule": "none"},
+        )
+        event = RelationContractEvent.from_dict(
+            valid_relation_contract_event(
+                "contract.drafted",
+                relation,
+                event_id="event:projection:wrong-object-kind",
+            )
+        )
+        source = ProjectionFixtureSource(
+            [event], {relation["content_digest"]: relation}
+        )
+        with assert_relation_error(self, "event_object_kind_mismatch"):
             rebuild_projection(source)
 
     def test_projection_schema_meta_validates_and_digest_omits_itself(self):
