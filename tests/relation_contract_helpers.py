@@ -342,6 +342,7 @@ def object_ref(value):
         "representation_grant_id",
         "commitment_id",
         "candidate_id",
+        "receipt_digest",
         "receipt_id",
     ):
         if field in value:

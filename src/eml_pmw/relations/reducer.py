@@ -34,12 +34,27 @@ def _object_ref(value: Mapping[str, Any]) -> str:
         "representation_grant_id",
         "commitment_id",
         "candidate_id",
+        "receipt_digest",
         "receipt_id",
         "grant_authority_evidence_id",
     ):
         if field in value:
             return str(value[field])
     raise RelationContractError("object_ref_invalid", str(value.get("schema")))
+
+
+def _object_digest(value: Mapping[str, Any]) -> str | None:
+    field = (
+        "receipt_digest"
+        if value.get("schema") == "arcp/authority-evaluation-receipt/0.1"
+        else "content_digest"
+    )
+    digest = value.get(field)
+    if not isinstance(digest, str):
+        return None
+    if object_content_digest(dict(value), field) != digest:
+        return None
+    return digest
 
 
 @dataclass(frozen=True)
@@ -498,8 +513,7 @@ def _verified_object(
     obj = objects.get(event.object_digest)
     if (
         obj is None
-        or obj.get("content_digest") != event.object_digest
-        or object_content_digest(obj) != event.object_digest
+        or _object_digest(obj) != event.object_digest
     ):
         raise RelationContractError("object_digest_mismatch", event.event_id)
     if _object_ref(obj) != event.object_ref:
@@ -520,8 +534,7 @@ def _verify_evidence_pair(
     obj = objects.get(str(digest))
     if (
         obj is None
-        or obj.get("content_digest") != digest
-        or object_content_digest(obj) != digest
+        or _object_digest(obj) != digest
         or _object_ref(obj) != ref
     ):
         raise RelationContractError(f"{kind}_digest_mismatch", event.event_id)

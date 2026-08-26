@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evemisslab.com/schemas/arcp/relation-contract-projection-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "projection_digest",
+    "source_event_digests",
+    "relations",
+    "contracts",
+    "representation_grants",
+    "acceptances",
+    "commitments",
+    "authority_candidates",
+    "authority_evaluations",
+    "conflicts",
+    "invalidated_candidate_digests",
+    "not_claimed"
+  ],
+  "properties": {
+    "schema": {"const": "arcp/relation-contract-projection/0.1"},
+    "projection_digest": {"$ref": "#/$defs/profileDigest"},
+    "source_event_digests": {"$ref": "#/$defs/digestArray"},
+    "relations": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/relationProjection"}
+    },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/contractProjection"}
+    },
+    "representation_grants": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/representationProjection"}
+    },
+    "acceptances": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/acceptanceProjection"}
+    },
+    "commitments": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/commitmentProjection"}
+    },
+    "authority_candidates": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/candidateProjection"}
+    },
+    "authority_evaluations": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/evaluationProjection"}
+    },
+    "conflicts": {"$ref": "#/$defs/refArray"},
+    "invalidated_candidate_digests": {"$ref": "#/$defs/digestArray"},
+    "not_claimed": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "$defs": {
+    "profileDigest": {
+      "type": "string",
+      "pattern": "^sha256:arcp-relation-contract-json-nfc-codepoint-v1:[0-9a-f]{64}$"
+    },
+    "nullableDigest": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/profileDigest"}]
+    },
+    "nullableRef": {
+      "oneOf": [{"type": "null"}, {"type": "string", "minLength": 1}]
+    },
+    "refArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "digestArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "relationVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "content_digest", "parent_version_digest", "relation_class", "acceptance_rule"],
+      "properties": {
+        "version": {"type": "integer", "minimum": 1},
+        "content_digest": {"$ref": "#/$defs/profileDigest"},
+        "parent_version_digest": {"$ref": "#/$defs/nullableDigest"},
+        "relation_class": {"enum": ["descriptive", "consensual", "authority-bearing"]},
+        "acceptance_rule": {"enum": ["none", "all-named-parties"]}
+      }
+    },
+    "relationProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "versions", "derived_contract_refs"],
+      "properties": {
+        "state": {"type": "string", "minLength": 1},
+        "versions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/relationVersion"}},
+        "derived_contract_refs": {"$ref": "#/$defs/refArray"}
+      }
+    },
+    "contractVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "content_digest", "parent_version_digest", "relation_version_ref", "relation_version_digest"],
+      "properties": {
+        "version": {"type": "integer", "minimum": 1},
+        "content_digest": {"$ref": "#/$defs/profileDigest"},
+        "parent_version_digest": {"$ref": "#/$defs/nullableDigest"},
+        "relation_version_ref": {"$ref": "#/$defs/nullableRef"},
+        "relation_version_digest": {"$ref": "#/$defs/nullableDigest"}
+      }
+    },
+    "contractProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "lifecycle_state", "active_lifecycle_head", "active_contract_digest", "versions", "execution_status"],
+      "properties": {
+        "state": {"enum": ["single_head_active", "single_head_inactive", "conflicted_heads", "blocked", "indeterminate", "terminated", "expired"]},
+        "lifecycle_state": {"type": "string", "minLength": 1},
+        "active_lifecycle_head": {"$ref": "#/$defs/nullableRef"},
+        "active_contract_digest": {"$ref": "#/$defs/nullableDigest"},
+        "versions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/contractVersion"}},
+        "execution_status": {"const": "not_observed"}
+      }
+    },
+    "representationProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "content_digest", "state_head", "principal_party_ref", "representative_ref"],
+      "properties": {
+        "status": {"enum": ["unobserved", "active", "suspended", "revoked", "expired"]},
+        "content_digest": {"$ref": "#/$defs/profileDigest"},
+        "state_head": {"$ref": "#/$defs/nullableRef"},
+        "principal_party_ref": {"type": "string", "minLength": 1},
+        "representative_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "acceptanceProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "content_digest", "party_ref", "target_kind", "target_id", "target_digest", "acceptance_evidence_root_refs"],
+      "properties": {
+        "status": {"enum": ["accepted", "inactive"]},
+        "content_digest": {"$ref": "#/$defs/profileDigest"},
+        "party_ref": {"type": "string", "minLength": 1},
+        "target_kind": {"enum": ["relation", "contract"]},
+        "target_id": {"type": "string", "minLength": 1},
+        "target_digest": {"$ref": "#/$defs/profileDigest"},
+        "acceptance_evidence_root_refs": {"$ref": "#/$defs/refArray"}
+      }
+    },
+    "commitmentVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "content_digest", "parent_version_digest", "contract_ref", "declared_status"],
+      "properties": {
+        "version": {"type": "integer", "minimum": 1},
+        "content_digest": {"$ref": "#/$defs/profileDigest"},
+        "parent_version_digest": {"$ref": "#/$defs/nullableDigest"},
+        "contract_ref": {"type": "string", "minLength": 1},
+        "declared_status": {"type": "string", "minLength": 1}
+      }
+    },
+    "commitmentProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "versions"],
+      "properties": {
+        "status": {"type": "string", "minLength": 1},
+        "versions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/commitmentVersion"}}
+      }
+    },
+    "candidateProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "projection_state", "candidate_status", "reason_codes", "contract_ref", "contract_digest", "active_lifecycle_head", "representation_grant_refs", "party_evidence_pin_refs", "party_evidence_set_digest", "evaluator_profile_id", "evaluator_policy_version"],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "projection_state": {"enum": ["unobserved", "recorded", "invalidated"]},
+        "candidate_status": {"enum": ["eligible", "blocked", "indeterminate"]},
+        "reason_codes": {"$ref": "#/$defs/refArray"},
+        "contract_ref": {"type": "string", "minLength": 1},
+        "contract_digest": {"$ref": "#/$defs/profileDigest"},
+        "active_lifecycle_head": {"type": "string", "minLength": 1},
+        "representation_grant_refs": {"$ref": "#/$defs/refArray"},
+        "party_evidence_pin_refs": {"$ref": "#/$defs/refArray"},
+        "party_evidence_set_digest": {"type": "string", "minLength": 1},
+        "evaluator_profile_id": {"type": "string", "minLength": 1},
+        "evaluator_policy_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "evaluationProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_state", "candidate_ref", "candidate_digest", "evaluator_profile_id", "evaluator_implementation_version", "evaluator_policy_version", "resolution_status", "receipt_currency"],
+      "properties": {
+        "projection_state": {"enum": ["unobserved", "recorded"]},
+        "candidate_ref": {"type": "string", "minLength": 1},
+        "candidate_digest": {"$ref": "#/$defs/profileDigest"},
+        "evaluator_profile_id": {"type": "string", "minLength": 1},
+        "evaluator_implementation_version": {"type": "string", "minLength": 1},
+        "evaluator_policy_version": {"type": "string", "minLength": 1},
+        "resolution_status": {"enum": ["authorized", "approval-required", "multi-party-required", "denied"]},
+        "receipt_currency": {"const": "recorded_not_revalidated"}
+      }
+    }
+  }
+}
