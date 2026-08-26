@@ -183,6 +183,20 @@ def evaluate_activation(inputs: ActivationInputs) -> ActivationDecision:
         ):
             blocked.add("representation_scope_mismatch")
             continue
+        if (
+            inputs.lifecycle_projection.representation_states.get(
+                grant.representation_grant_id
+            )
+            != "active"
+            or inputs.lifecycle_projection.representation_state_digests.get(
+                grant.representation_grant_id
+            )
+            != grant.content_digest
+            or grant.representation_grant_id
+            not in inputs.lifecycle_projection.representation_state_heads
+        ):
+            blocked.add("representation_inactive")
+            continue
         grant_time = _time_state(grant.valid_from, inputs.now, grant.expires_at)
         if grant_time == "indeterminate":
             indeterminate.add("representation_time_indeterminate")

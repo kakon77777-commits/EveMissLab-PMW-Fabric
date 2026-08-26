@@ -106,6 +106,7 @@ Do not add SQLite in this profile version. JSON event/object bytes are canonical
 ```powershell
 python -m venv .venv
 .venv\Scripts\python -m pip install -e ".[test]"
+$env:PYTHONPATH = (Resolve-Path 'src').Path
 ```
 
 - [ ] Run the unchanged baseline before writing a RED test:
@@ -116,7 +117,7 @@ python -m venv .venv
 git status --short --branch
 ```
 
-The reviewed docs-worktree baseline is `277 passed / 2 existing skips / 0 failed`. If the implementation worktree differs, stop and identify whether the base commit, interpreter, dependency set, or workspace state differs; do not reinterpret a dirty or failing baseline as a feature RED.
+The reviewed docs-worktree baseline is `277 passed / 2 existing skips / 0 failed`. Keep that `PYTHONPATH` value for every focused `unittest discover` command, even after editable installation, so a clean-checkout command always names the source tree under review. If the implementation worktree differs, stop and identify whether the base commit, interpreter, dependency set, or workspace state differs; do not reinterpret a dirty or failing baseline as a feature RED.
 
 ---
 

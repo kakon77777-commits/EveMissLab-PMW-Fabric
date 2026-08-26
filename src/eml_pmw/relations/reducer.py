@@ -12,6 +12,8 @@ from .models_authority import (
     RepresentationGrant,
 )
 from .models_relation import RelationVersion
+from .authority import validate_grant_authority
+from .temporal import compare_instants
 
 
 TERMINAL_CONTRACT_EVENTS = {"contract.terminated", "contract.expired"}
@@ -49,6 +51,8 @@ class LifecycleProjection:
     active_head_digests: dict[str, str]
     acceptances: dict[str, tuple[str, ...]]
     representation_states: dict[str, str]
+    representation_state_digests: dict[str, str]
+    representation_state_heads: dict[str, str]
     commitment_states: dict[str, str]
     candidate_states: dict[str, str]
     evaluation_states: dict[str, str]
@@ -67,6 +71,8 @@ class _ReducerState:
         self.active_head_digests: dict[str, str] = {}
         self.acceptances_by_target: dict[str, dict[str, PartyAcceptance]] = {}
         self.representation_states: dict[str, str] = {}
+        self.representation_state_digests: dict[str, str] = {}
+        self.representation_state_heads: dict[str, str] = {}
         self.commitment_states: dict[str, str] = {}
         self.candidate_states: dict[str, str] = {}
         self.candidate_objects: dict[str, dict[str, Any]] = {}
@@ -88,9 +94,180 @@ class _ReducerState:
             pending.extend(self.parents.get(item, ()))
         return False
 
+    def current_state_for(self, event, obj):
+        kind = event.event_kind
+        if kind.startswith("relation.") and kind != "relation.party_accepted":
+            return self.relation_states.get(str(obj["relation_id"]))
+        if kind in {"relation.party_accepted", "contract.party_accepted", "contract.party_acceptance_withdrawn"}:
+            acceptance = PartyAcceptance.from_dict(obj)
+            if acceptance.target_kind == "relation":
+                return self.relation_states.get(acceptance.target_id)
+            return self.contract_version_states.get(acceptance.target_digest)
+        if kind.startswith("contract."):
+            contract_id = str(obj["contract_id"])
+            digest = str(obj["content_digest"])
+            if kind in {
+                "contract.drafted",
+                "contract.proposed",
+                "contract.counterproposed",
+                "contract.activated",
+                "contract.rejected",
+                "contract.withdrawn",
+            }:
+                prior = self.contract_version_states.get(digest)
+                if kind == "contract.activated" and prior == "active":
+                    existing = self.active_heads.get(contract_id)
+                    if existing is not None and not self.is_ancestor(
+                        existing, event.event_id
+                    ):
+                        return "accepted"
+                return prior
+            return self.contract_states.get(contract_id)
+        if kind.startswith("representation."):
+            return self.representation_states.get(
+                str(obj["representation_grant_id"])
+            )
+        if kind.startswith("commitment."):
+            return self.commitment_states.get(str(obj["commitment_id"]))
+        if kind == "authority_candidate.created":
+            return self.contract_states.get(str(obj.get("contract_ref", "")))
+        if kind == "authority_candidate.invalidated":
+            return self.candidate_states.get(str(obj["content_digest"]))
+        if kind == "authority_evaluation.recorded":
+            return str(obj.get("candidate_status", "eligible"))
+        return None
+
+    def validate_transition(self, event, obj) -> None:
+        rule = EVENT_RULES[event.event_kind]
+        prior = self.current_state_for(event, obj)
+        if prior not in rule.allowed_states:
+            if (
+                str(obj.get("contract_id", "")) in self.terminal_contracts
+                and event.event_kind in FORBIDDEN_AFTER_TERMINAL
+            ):
+                raise RelationContractError(
+                    "terminal_transition_forbidden", str(obj.get("contract_id"))
+                )
+            raise RelationContractError(
+                "lifecycle_transition_invalid",
+                f"{event.event_kind}:{prior!r}",
+            )
+
+    def evidence_authorities(self) -> dict[str, GrantAuthorityEvidence]:
+        result: dict[str, GrantAuthorityEvidence] = {}
+        for value in self.objects.values():
+            if value.get("schema") == "arcp/grant-authority-evidence/0.1":
+                item = GrantAuthorityEvidence.from_dict(value)
+                result[item.grant_authority_evidence_id] = item
+        return result
+
+    def event_scope(self, event, obj) -> tuple[str, str]:
+        if event.event_kind in {
+            "contract.party_accepted",
+            "contract.party_acceptance_withdrawn",
+            "relation.party_accepted",
+        }:
+            acceptance = PartyAcceptance.from_dict(obj)
+            return acceptance.target_kind, acceptance.target_id
+        if "contract_id" in obj:
+            return "contract", str(obj["contract_id"])
+        if "relation_id" in obj:
+            return "relation", str(obj["relation_id"])
+        if "representation_grant_id" in obj:
+            return "representation", str(obj["representation_grant_id"])
+        if "contract_ref" in obj:
+            return "contract", str(obj["contract_ref"])
+        return EVENT_RULES[event.event_kind].object_kind, event.subject_ref
+
+    def validate_event_permissions(
+        self,
+        event,
+        obj,
+        authority: GrantAuthorityEvidence | None,
+        representation: RepresentationGrant | None,
+    ) -> None:
+        target_kind, target_ref = self.event_scope(event, obj)
+        authority_map = self.evidence_authorities()
+        forbidden_refs = {event.object_ref, target_ref}
+        forbidden_digests = {event.object_digest}
+        if event.representation_grant_ref is not None:
+            forbidden_refs.add(event.representation_grant_ref)
+        if event.representation_grant_digest is not None:
+            forbidden_digests.add(event.representation_grant_digest)
+
+        if authority is not None:
+            if (
+                event.event_kind not in authority.permitted_lifecycle_actions
+                or target_ref not in authority.permitted_contract_scope
+            ):
+                raise RelationContractError(
+                    "transition_authority_scope_mismatch", event.event_id
+                )
+            validate_grant_authority(
+                authority.grant_authority_evidence_id,
+                authority_map,
+                forbidden_refs,
+                forbidden_digests,
+            )
+
+        if representation is not None:
+            scope = (
+                representation.relation_scope
+                if target_kind == "relation"
+                else representation.contract_scope
+            )
+            if (
+                event.event_kind not in representation.allowed_lifecycle_actions
+                or target_ref not in scope
+                or event.claimed_actor_ref != representation.representative_ref
+            ):
+                raise RelationContractError(
+                    "representation_scope_mismatch", event.event_id
+                )
+            if (
+                self.representation_states.get(
+                    representation.representation_grant_id
+                )
+                != "active"
+                or self.representation_state_digests.get(
+                    representation.representation_grant_id
+                )
+                != representation.content_digest
+                or representation.representation_grant_id
+                not in self.representation_state_heads
+            ):
+                raise RelationContractError("representation_inactive", event.event_id)
+            if compare_instants(representation.valid_from, event.created_time) not in {
+                "before",
+                "equal",
+            } or compare_instants(event.created_time, representation.expires_at) != "before":
+                raise RelationContractError("representation_expired", event.event_id)
+            validate_grant_authority(
+                representation.grant_authority_ref,
+                authority_map,
+                forbidden_refs,
+                forbidden_digests,
+            )
+            if event.event_kind in {
+                "contract.party_accepted",
+                "contract.party_acceptance_withdrawn",
+                "relation.party_accepted",
+            }:
+                acceptance = PartyAcceptance.from_dict(obj)
+                if acceptance.party_ref != representation.principal_party_ref:
+                    raise RelationContractError(
+                        "representation_principal_mismatch", event.event_id
+                    )
+
     def invalidate_contract_candidates(self, contract_id: str) -> None:
         for digest, value in self.candidate_objects.items():
             if value.get("contract_ref") == contract_id:
+                self.invalidated_candidate_digests.add(digest)
+                self.candidate_states[digest] = "invalidated"
+
+    def invalidate_relation_candidates(self, relation_id: str) -> None:
+        for digest, value in self.candidate_objects.items():
+            if relation_id in value.get("relation_refs", ()):
                 self.invalidated_candidate_digests.add(digest)
                 self.candidate_states[digest] = "invalidated"
 
@@ -105,7 +282,7 @@ class _ReducerState:
         }
         self.relation_states[relation.relation_id] = states[event.event_kind]
         if states[event.event_kind] in {"withdrawn", "superseded"}:
-            self.invalidate_contract_candidates(relation.relation_id)
+            self.invalidate_relation_candidates(relation.relation_id)
 
     def apply_acceptance(self, event, obj):
         acceptance = PartyAcceptance.from_dict(obj)
@@ -219,6 +396,10 @@ class _ReducerState:
             "representation.expired": "expired",
         }[event.event_kind]
         self.representation_states[grant.representation_grant_id] = state
+        self.representation_state_digests[
+            grant.representation_grant_id
+        ] = grant.content_digest
+        self.representation_state_heads[grant.representation_grant_id] = event.event_id
         if state != "active":
             for digest in tuple(self.candidate_states):
                 self.invalidated_candidate_digests.add(digest)
@@ -251,6 +432,8 @@ class _ReducerState:
                 for digest, items in sorted(self.acceptances_by_target.items())
             },
             dict(sorted(self.representation_states.items())),
+            dict(sorted(self.representation_state_digests.items())),
+            dict(sorted(self.representation_state_heads.items())),
             dict(sorted(self.commitment_states.items())),
             dict(sorted(self.candidate_states.items())),
             dict(sorted(self.evaluation_states.items())),
@@ -337,24 +520,31 @@ def reduce_events(
     )
     for event in ordered:
         obj = _verified_object(event, objects_by_digest)
-        authority = _verify_evidence_pair(
+        state.validate_transition(event, obj)
+        authority_value = _verify_evidence_pair(
             event,
             objects_by_digest,
             ref=event.lifecycle_transition_authority_ref,
             digest=event.lifecycle_transition_authority_digest,
             kind="transition_authority",
         )
-        if authority is not None:
-            GrantAuthorityEvidence.from_dict(authority)
-        representation = _verify_evidence_pair(
+        authority = (
+            None
+            if authority_value is None
+            else GrantAuthorityEvidence.from_dict(authority_value)
+        )
+        representation_value = _verify_evidence_pair(
             event,
             objects_by_digest,
             ref=event.representation_grant_ref,
             digest=event.representation_grant_digest,
             kind="representation_grant",
         )
-        if representation is not None:
-            RepresentationGrant.from_dict(representation)
+        representation = (
+            None
+            if representation_value is None
+            else RepresentationGrant.from_dict(representation_value)
+        )
         if event.event_kind in {
             "contract.party_accepted",
             "contract.party_acceptance_withdrawn",
@@ -370,5 +560,8 @@ def reduce_events(
                 raise RelationContractError(
                     "representation_grant_digest_mismatch", event.event_id
                 )
+        state.validate_event_permissions(
+            event, obj, authority, representation
+        )
         EVENT_RULES[event.event_kind].effect_handler(state, event, obj)
     return state.projection()

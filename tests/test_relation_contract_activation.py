@@ -152,6 +152,27 @@ class RelationContractActivationTests(unittest.TestCase):
         self.assertEqual(decision.status, "blocked")
         self.assertIn("party_binding_inactive", decision.reason_codes)
 
+    def test_missing_suspended_revoked_or_expired_representation_blocks_candidate(self):
+        inputs = current_inputs()
+        grant_id = inputs.representation_grants[0].representation_grant_id
+        cases = {
+            "missing": {},
+            "suspended": {grant_id: "suspended"},
+            "revoked": {grant_id: "revoked"},
+            "expired": {grant_id: "expired"},
+        }
+        for label, states in cases.items():
+            with self.subTest(label=label):
+                projection = replace(
+                    inputs.lifecycle_projection,
+                    representation_states=states,
+                )
+                decision = evaluate_activation(
+                    replace(inputs, lifecycle_projection=projection)
+                )
+                self.assertEqual(decision.status, "blocked")
+                self.assertIn("representation_inactive", decision.reason_codes)
+
     def test_commitment_is_versioned_and_has_no_execution_claim(self):
         item = CommitmentRecord.from_dict(valid_commitment(execution_refs=[]))
         self.assertEqual(item.version, 1)
@@ -180,6 +201,21 @@ class RelationContractActivationTests(unittest.TestCase):
         )
         self.assertFalse(head_changed.current)
         self.assertEqual(head_changed.reason_code, "authority_resolution_stale")
+
+        grant_id = inputs.representation_grants[0].representation_grant_id
+        revoked_projection = replace(
+            inputs.lifecycle_projection,
+            representation_states={
+                **inputs.lifecycle_projection.representation_states,
+                grant_id: "revoked",
+            },
+        )
+        revoked = receipt_is_current(
+            receipt,
+            inputs=replace(inputs, lifecycle_projection=revoked_projection),
+        )
+        self.assertFalse(revoked.current)
+        self.assertEqual(revoked.reason_code, "authority_resolution_stale")
 
     def test_old_candidate_argument_is_not_part_of_currency_api(self):
         inputs = current_inputs()

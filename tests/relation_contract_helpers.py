@@ -220,11 +220,24 @@ def valid_grant_authority_evidence(party="a", **overrides):
         "authority_source_ref": f"authority-root:fixture:{party}",
         "resolver_profile_id": "authority-resolver:fixture:v1",
         "permitted_lifecycle_actions": [
+            "representation.granted",
+            "representation.suspended",
+            "representation.revoked",
             "contract.proposed",
             "contract.party_accepted",
             "contract.activated",
+            "contract.amendment_proposed",
+            "contract.suspended",
+            "contract.resumed",
+            "contract.terminated",
+            "contract.withdrawn",
+            "contract.corrected",
+            "contract.tombstoned",
         ],
-        "permitted_contract_scope": ["contract:fixture:collaboration"],
+        "permitted_contract_scope": [
+            "contract:fixture:collaboration",
+            f"representation-grant:fixture:{party}:1",
+        ],
         "valid_from": normalized_instant("900000000", 0),
         "expires_at": normalized_instant("3000000000", 0),
         "dependency_refs": [],
@@ -244,6 +257,9 @@ def valid_representation_grant(party="a", **overrides):
             "contract.proposed",
             "contract.party_accepted",
             "contract.activated",
+            "contract.amendment_proposed",
+            "contract.resumed",
+            "contract.terminated",
         ],
         "contract_scope": ["contract:fixture:collaboration"],
         "relation_scope": ["relation:fixture:collaboration"],
@@ -365,7 +381,11 @@ def valid_relation_contract_event(
         "object_ref": object_ref(object_value),
         "object_digest": object_value["content_digest"],
         "causal_parents": list(parents),
-        "claimed_actor_ref": "actor:fixture:a",
+        "claimed_actor_ref": (
+            "actor:fixture:a"
+            if representation_grant is None
+            else representation_grant["representative_ref"]
+        ),
         "representation_grant_ref": (
             None
             if representation_grant is None
