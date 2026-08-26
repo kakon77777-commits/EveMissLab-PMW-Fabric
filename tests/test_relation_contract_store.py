@@ -89,6 +89,23 @@ class RelationContractStoreTests(unittest.TestCase):
         self.assertEqual(sorted(results), ["created", "quarantined"])
         self.assertEqual(len(RelationContractStore(self.root).objects_by_digest()), 1)
 
+    def test_dynamic_object_kind_parent_exists_before_safe_publication_check(self):
+        class ParentFirstStore(RelationContractStore):
+            def _safe_store_path(self, path, *, must_exist):
+                if (
+                    not must_exist
+                    and path.parent.parent == self.objects_dir
+                    and not path.parent.is_dir()
+                ):
+                    raise RelationContractError(
+                        "storage_path_refused", "object kind parent missing"
+                    )
+                return super()._safe_store_path(path, must_exist=must_exist)
+
+        store = ParentFirstStore(self.root)
+        result = store.put_object("contract", valid_contract_version())
+        self.assertEqual(result.status, "created")
+
     def test_missing_parent_fails_before_event_publication(self):
         store = RelationContractStore(self.root)
         contract = valid_contract_version()

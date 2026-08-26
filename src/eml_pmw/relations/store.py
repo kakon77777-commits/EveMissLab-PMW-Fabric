@@ -439,6 +439,12 @@ class RelationContractStore:
         identity, digest = self._validate_object(kind, value)
         bundle = self._object_bundle(kind, identity, digest, value)
         path = self._object_path(kind, identity)
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as error:
+            raise RelationContractError(
+                "storage_path_refused", str(path.parent)
+            ) from error
         status = "created"
         if path.exists():
             existing = self._read_object_bundle(path)
