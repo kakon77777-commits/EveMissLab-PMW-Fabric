@@ -1,0 +1,65 @@
+{
+  "schema": "pmw-relation-contract-v1-candidate-evidence/0.1",
+  "version": "0.4.0",
+  "reviewed_source_head": "b3c8e8d171d44b2355e58679dd56fe03a150a9b8",
+  "reviewed_source_tree": "4c3e0cbca4a4d5746573c7de4758cab457549b3a",
+  "review_status": "ACCEPT",
+  "review_artifact_ref": "runtime/task-handoffs/2026-08-26_01a02e70_to_019fe51e_relation-contract-h1-prime-closure.md",
+  "review_artifact_sha256": "C46D03EB0746696CEF20657C3A13ECF6CCE73C60050F2ADE00C6B7BA9DA8918F",
+  "review_artifact_bytes": 3956,
+  "full_test_counts": {
+    "cases": 408,
+    "passed": 404,
+    "failed": 0,
+    "skipped": 4,
+    "duration_seconds": "88.630"
+  },
+  "focused_test_counts": {
+    "cases": 128,
+    "passed": 126,
+    "failed": 0,
+    "skipped": 2,
+    "duration_seconds": "13.985"
+  },
+  "wheel_artifact_ref": "runtime/task-handoffs/artifacts/relation-contract-4c3e0cbc/evemiss_pmw_fabric-0.4.0-py3-none-any.whl",
+  "wheel_sha256": "3BE51FFA8368955489BD401079CB2DFAE01E4DA1EB96BC21009004A11ED91C39",
+  "wheel_bytes": 203962,
+  "wheel_build_reproducibility": "not_proven",
+  "mutation_matrix": [
+    {
+      "schema": "pmw-relation-contract-local-mutation-matrix/0.2",
+      "artifact_ref": "runtime/task-handoffs/2026-08-26_019fe51e_relation-contract-mutation-matrix-local-v2.json",
+      "artifact_sha256": "2FA77352E3B321AA3BCBD10F70561008226EC79FE639F2B5477A8B55F87AA46F",
+      "artifact_bytes": 1800,
+      "prior_zero_effect_claim": "withdrawn"
+    }
+  ],
+  "effect_measurement_status": "unmeasured",
+  "effect_counts": null,
+  "static_effect_scan": {
+    "status": "passed",
+    "findings": 0,
+    "scope": "direct relation-profile package imports, calls, and portable resource literals only"
+  },
+  "ci": {
+    "status": "not_performed_for_unpushed_H1_prime",
+    "run_ids": []
+  },
+  "ctcl_status": "registered_anchor",
+  "ctcl_instant_ref": "ctcl:instant:b9cc2306-9b5f-4d9f-962b-e7ff83889fff",
+  "accepted_pre_release_deltas": [
+    "D037C42B3656A75CB1A92A0EE8929A7D34C08ED03BA1BA19B37A4B56831F277B",
+    "0D54CD3EA66E1A9EE1A92E247C68330BC967BED9F28565184170084650058EE2"
+  ],
+  "not_claimed": [
+    "ci_passed_before_h2_push",
+    "effect_counts_measured",
+    "final_feature_head",
+    "merge",
+    "production_or_private_effects",
+    "provider_execution",
+    "real_contract",
+    "release_or_deployment",
+    "wheel_byte_reproducibility"
+  ]
+}
